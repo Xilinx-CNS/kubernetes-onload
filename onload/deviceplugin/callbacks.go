@@ -64,7 +64,9 @@ func (rpc *RPCServer) Allocate(
 		devIDs := strings.Join(req.DevicesIDs, ",")
 		glog.Infof("  Devices: %s", devIDs)
 		resp := pluginapi.ContainerAllocateResponse{
+			Envs:    rpc.manager.envs,
 			Devices: rpc.manager.deviceFiles,
+			Mounts:  rpc.manager.mounts,
 		}
 		resps.ContainerResponses = append(resps.ContainerResponses, &resp)
 	}

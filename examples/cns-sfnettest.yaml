@@ -57,30 +57,14 @@ spec:
   - name: onload-sfnettest-server
     image: image-registry.openshift-image-registry.svc:5000/default/onload-sfnettest:latest
     imagePullPolicy: Always
-    env:
-    - name: LD_PRELOAD
-      value: /opt/onload/usr/lib64/libonload.so
     command:
     - /build/cns-sfnettest/src/sfnt-pingpong
     resources:
       limits:
         amd.com/onload: 1
-    volumeMounts:
-    - name: onload-volume
-      mountPath: "/opt/onload"
     securityContext:
       privileged: true
   nodeName: compute-0
-  initContainers:
-  - name: init-onload-user
-    image: image-registry.openshift-image-registry.svc:5000/onload-user/onload-user
-    imagePullPolicy: Always
-    volumeMounts:
-    - name: onload-volume
-      mountPath: "/tmp/onload"
-  volumes:
-  - name: onload-volume
-    emptyDir: {}
 ---
 apiVersion: v1
 kind: Pod
@@ -103,19 +87,6 @@ spec:
     resources:
       limits:
         amd.com/onload: 1
-    volumeMounts:
-    - name: onload-volume
-      mountPath: "/opt/onload"
     securityContext:
       privileged: true
   nodeName: compute-1
-  initContainers:
-  - name: init-onload-user
-    image: image-registry.openshift-image-registry.svc:5000/onload-user/onload-user
-    imagePullPolicy: Always
-    volumeMounts:
-    - name: onload-volume
-      mountPath: "/tmp/onload"
-  volumes:
-  - name: onload-volume
-    emptyDir: {}

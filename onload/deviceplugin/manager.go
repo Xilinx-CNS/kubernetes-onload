@@ -22,7 +22,9 @@ type NicManager struct {
 	// logic takes place.
 	interfaces     []string
 	deviceFiles    []*pluginapi.DeviceSpec
+	mounts         []*pluginapi.Mount
 	devices        []*pluginapi.Device
+	envs           map[string]string
 	maxPodsPerNode int
 	rpcServer      *RPCServer
 	wg             sync.WaitGroup
@@ -47,6 +49,7 @@ func NewNicManager() (*NicManager, error) {
 		interfaces:     nics,
 		maxPodsPerNode: getMaxPodsPerNode(),
 	}
+	manager.envs = make(map[string]string)
 	manager.initDevices()
 	manager.initMounts()
 
