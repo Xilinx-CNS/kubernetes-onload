@@ -64,10 +64,20 @@ spec:
         volumeMounts:
           - mountPath: /var/lib/kubelet/device-plugins
             name: kubelet-socket
+          - mountPath: /host/onload
+            name: host-onload
+        lifecycle:
+          postStart:
+            exec:
+              command: ["cp", "-TRv", "/opt/onload", "/host/onload"]
       volumes:
         - hostPath:
             path: /var/lib/kubelet/device-plugins
             type: Directory
           name: kubelet-socket
+        - hostPath:
+            path: /opt/onload
+            type: DirectoryOrCreate
+          name: host-onload
       nodeSelector:
         node-role.kubernetes.io/worker: ""

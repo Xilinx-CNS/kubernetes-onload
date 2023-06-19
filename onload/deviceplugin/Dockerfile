@@ -5,7 +5,7 @@ COPY . /app/
 WORKDIR /app
 RUN go build -o /app/onload-plugin
 
-FROM registry.redhat.io/ubi8/ubi-minimal
+FROM image-registry.openshift-image-registry.svc:5000/onload-user/onload-user:latest
 RUN microdnf install lshw
 COPY --from=builder /app/onload-plugin /usr/bin/onload-plugin
 CMD ["/usr/bin/onload-plugin"]
