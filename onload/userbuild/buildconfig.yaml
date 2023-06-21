@@ -29,7 +29,7 @@ spec:
     - type: "ConfigChange"
     - type: "ImageChange"
   source:
-    dockerfile: $(ONLOAD_DOCKERFILE)
+    dockerfile: (placeholder)
   strategy:
     dockerStrategy:
       buildArgs:

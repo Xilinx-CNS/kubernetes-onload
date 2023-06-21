@@ -11,15 +11,14 @@ configMapGenerator:
   files:
   - dockerfile=Dockerfile
 
-vars:
-- name: DEVICE_PLUGIN_DOCKERFILE
-  objref:
+replacements:
+- source:
     kind: ConfigMap
     name: onload-device-plugin-dockerfile
-    apiVersion: v1
-  fieldref:
-    fieldpath:
-      data.dockerfile
-
-configurations:
-- bc-dockerfile-varref.yaml
+    fieldPath: data.dockerfile
+  targets:
+  - select:
+      kind: BuildConfig
+      name: onload-device-plugin
+    fieldPaths:
+    - spec.source.dockerfile

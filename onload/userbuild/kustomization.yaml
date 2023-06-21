@@ -10,15 +10,14 @@ configMapGenerator:
   files:
   - dockerfile=Dockerfile
 
-vars:
-- name: ONLOAD_DOCKERFILE
-  objref:
+replacements:
+- source:
     kind: ConfigMap
     name: onload-user-dockerfile
-    apiVersion: v1
-  fieldref:
-    fieldpath:
-      data.dockerfile
-
-configurations:
-- bc-dockerfile-varref.yaml
+    fieldPath: data.dockerfile
+  targets:
+  - select:
+      kind: BuildConfig
+      name: onload-user
+    fieldPaths:
+    - spec.source.dockerfile
