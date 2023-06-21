@@ -53,7 +53,7 @@ spec:
         moduleName: sfc
       kernelMappings:
         - regexp: '^.*\.x86_64$'
-          containerImage: image-registry.openshift-image-registry.svc:5000/openshift-kmm/sfc-module:latest
+          containerImage: image-registry.openshift-image-registry.svc:5000/openshift-kmm/sfc-module:${KERNEL_FULL_VERSION}
           build:
             dockerfileConfigMap:
               name: sfc-module-dockerfile
