@@ -55,7 +55,7 @@ spec:
       serviceAccount: onload-device-plugin-sa
       serviceAccountName: onload-device-plugin-sa
       containers:
-      - image: image-registry.openshift-image-registry.svc:5000/onload-device-plugin/onload-device-plugin:latest
+      - image: image-registry.openshift-image-registry.svc:5000/onload-artifacts/onload-device-plugin:latest
         name: onload-device-plugin
         imagePullPolicy: Always
         command: ["/usr/bin/onload-plugin"]

@@ -5,15 +5,6 @@ kind: Namespace
 metadata:
   name: onload-device-plugin
 ---
-apiVersion: image.openshift.io/v1
-kind: ImageStream
-metadata:
-  labels:
-    app: onload-device-plugin
-  name: onload-device-plugin
-  namespace: onload-device-plugin
-spec: {}
----
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
@@ -35,3 +26,4 @@ spec:
     to:
       kind: ImageStreamTag
       name: onload-device-plugin:latest
+      namespace: onload-artifacts

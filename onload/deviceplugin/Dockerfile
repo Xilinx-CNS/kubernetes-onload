@@ -5,7 +5,7 @@ COPY . /app/
 WORKDIR /app
 RUN go build -o /app/onload-plugin
 
-FROM image-registry.openshift-image-registry.svc:5000/onload-user/onload-user:latest
+FROM image-registry.openshift-image-registry.svc:5000/onload-artifacts/onload-user:latest
 RUN microdnf install lshw
 COPY --from=builder /app/onload-plugin /usr/bin/onload-plugin
 CMD ["/usr/bin/onload-plugin"]

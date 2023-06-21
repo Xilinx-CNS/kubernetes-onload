@@ -62,7 +62,7 @@ spec:
       hostIPC: true
       containers:
       - name: onload-cplane
-        image: image-registry.openshift-image-registry.svc:5000/onload-user/onload-user:latest
+        image: image-registry.openshift-image-registry.svc:5000/onload-artifacts/onload-user:latest
         imagePullPolicy: Always
         command:
         - /bin/sh
