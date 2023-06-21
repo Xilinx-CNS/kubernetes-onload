@@ -42,6 +42,7 @@ E.g. OpenShift 4.10.62 -> 4.10.0
 Create and apply the composed Kustomize manifest that defines Onload resources, including namespaces:
 
 ```
+$ oc apply -f onload/imagestream/imagestream.yaml
 $ oc apply [--dry-run=client] -k onload/dev
 $ oc start-build onload-device-plugin -n onload-device-plugin --from-dir onload/deviceplugin
 ```
@@ -108,6 +109,7 @@ $ oc delete -f examples/cns-sfnettest.yaml
 $ oc delete project sfptpd
 $ oc delete -f 99-worker-chronyd.yaml
 $ oc delete -k onload/dev
+$ oc delete -f onload/imagestream/imagestream.yaml
 $ oc delete -f sfc/mco/99-sfc-machineconfig.yaml
 ```
 
