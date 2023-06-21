@@ -1,18 +1,18 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 ARG DTK_AUTO
-ARG KERNEL_VERSION
 
 FROM ${DTK_AUTO} as builder
 ARG ONLOAD_BUILD_PARAMS
+ARG KERNEL_VERSION
 
 WORKDIR /build/
 RUN git clone --depth 1 https://github.com/Xilinx-CNS/onload.git
 
 WORKDIR /build/onload
 
-RUN scripts/onload_build --kernel ${ONLOAD_BUILD_PARAMS}
-RUN scripts/onload_install --nobuild --kernelfiles
+RUN scripts/onload_build --kernel --kernelver ${KERNEL_VERSION} ${ONLOAD_BUILD_PARAMS}
+RUN scripts/onload_install --nobuild --kernelfiles --kernelver ${KERNEL_VERSION}
 
 FROM docker.io/redhat/ubi8:latest
 ARG KERNEL_VERSION
