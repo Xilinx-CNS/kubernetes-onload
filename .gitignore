@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2009-2023 Xilinx, Inc.
+
+.nfs*
+*.ncb
+*.suo
+*.bak
+*~
+*/\#*\#
+*.swp
+*.orig
+*.rej
+*.aps
+*.d
+*.ko
+*.o
+*.pyc
+*.old
+*.user
+*.mod.c
+.*.cmd
+.tmp_*
+BuildLog.htm
+cscope.*
+Module.*
+Modules.symvers
+modules.*
+tags
+TAGS
+semantic.cache
+*.gpState
+*.log
+*.so
+Thumbs.db
+.reviewboardrc
+.gdb_history

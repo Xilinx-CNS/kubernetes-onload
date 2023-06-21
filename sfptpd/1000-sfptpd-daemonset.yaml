@@ -1,0 +1,101 @@
+# SPDX-License-Identifier: MIT
+# (c) Copyright 2023 Advanced Micro Devices, Inc.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sfptpd
+  namespace: sfptpd
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sfptpd
+  namespace: sfptpd
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+  resourceNames:
+  - privileged
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sfptpd
+  namespace: sfptpd
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sfptpd
+subjects:
+- kind: ServiceAccount
+  name: sfptpd
+userNames:
+- system:serviceaccount:sfptpd:sfptpd
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sfptpd-config
+  namespace: sfptpd
+data:
+  sfptpd.conf: |
+    [general]
+    sync_module ptp ptp1
+
+    # Log to stdout/stderr. The recommended way to deploy would be only logging
+    # the message log, to stderr, and placing an adapter program in the pod to
+    # process RT JSON stats and make them available to a time series database.
+    message_log stderr
+    stats_log stdout
+
+    [ptp1]
+    ptp_domain 0
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: sfptpd-daemonset
+  namespace: sfptpd
+spec:
+  selector:
+    matchLabels:
+      name: sfptpd-daemonset
+  template:
+    metadata:
+      labels:
+        name: sfptpd-daemonset
+    spec:
+      hostNetwork: true
+      serviceAccountName: sfptpd
+      nodeSelector:
+        node-role.kubernetes.io/worker: ""
+      containers:
+      - image: image-registry.openshift-image-registry.svc:5000/sfptpd/sfptpd:latest
+        name: sfptpd
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: conf-sfptpd
+          mountPath: "/in"
+        - name: dev-ptp0
+          mountPath: "/dev/ptp0"
+        securityContext:
+          capabilities:
+            add:
+              - NET_BIND_SERVICE
+              - NET_ADMIN
+              - NET_RAW
+              - SYS_TIME
+        command: ["sfptpd"]
+        args: ["-v", "--no-daemon", "-f", "/in/sfptpd.conf", "-i", "sf0"]
+      volumes:
+      - name: conf-sfptpd
+        configMap:
+          name: sfptpd-config
+      - name: dev-ptp0
+        hostPath:
+          path: /dev/ptp0

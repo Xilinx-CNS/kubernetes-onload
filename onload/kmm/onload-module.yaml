@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+apiVersion: kmm.sigs.x-k8s.io/v1beta1
+kind: Module
+metadata:
+  name: onload-module
+spec:
+  moduleLoader:
+    container:
+      modprobe:
+        moduleName: onload
+      kernelMappings:
+        - regexp: '^.*\.x86_64$'
+          containerImage: image-registry.openshift-image-registry.svc:5000/openshift-kmm/onload-module:latest
+          build:
+            dockerfileConfigMap:
+              name: onload-module-dockerfile
+            buildArgs:
+            - name: ONLOAD_BUILD_PARAMS
+              value: ""
+  selector: # top-level selector
+    kubernetes.io/arch: amd64

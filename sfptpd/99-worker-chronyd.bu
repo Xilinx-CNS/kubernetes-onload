@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2023 Advanced Micro Devices, Inc.
+
+variant: openshift
+version: 4.12.0
+metadata:
+  name: 99-worker-chrony-disable
+  labels:
+    machineconfiguration.openshift.io/role: worker
+systemd:
+  units:
+    - name: chronyd.service
+      enabled: false

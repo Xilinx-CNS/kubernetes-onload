@@ -1,0 +1,77 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: onload-cplane
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: onload-cplane-sa
+  namespace: onload-cplane
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: onload-cplane-role
+  namespace: onload-cplane
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+  resourceNames:
+  - privileged
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: onload-cplane-rb
+  namespace: onload-cplane
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: onload-cplane-role
+subjects:
+- kind: ServiceAccount
+  name: onload-cplane-sa
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: onload-cplane-ds
+  namespace: onload-cplane
+spec:
+  selector:
+    matchLabels:
+      name: onload-cplane-ds
+  template:
+    metadata:
+      labels:
+        name: onload-cplane-ds
+    spec:
+      serviceAccount: onload-cplane-sa
+      serviceAccountName: onload-cplane-sa
+      nodeSelector:
+        node-role.kubernetes.io/worker: ""
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
+      containers:
+      - name: onload-cplane
+        image: image-registry.openshift-image-registry.svc:5000/onload-user/onload-user:latest
+        imagePullPolicy: Always
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - set -e;
+          echo /usr/bin/crictl | tee /sys/module/onload/parameters/cplane_server_path;
+          declare -r container_id=$(awk -F'[-./]' '/crio-/{print $(NF - 1); exit}' /proc/self/cgroup);
+          echo exec ${container_id} /opt/onload/sbin/onload_cp_server -K | tee /sys/module/onload/parameters/cplane_server_params;
+          sleep infinity
+        securityContext:
+          privileged: true

@@ -1,0 +1,121 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: onload-sfnettest
+  namespace: default
+spec: {}
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: onload-sfnettest
+  namespace: default
+spec:
+  nodeSelector:
+    node-role.kubernetes.io/worker: ""
+  runPolicy: "Serial"
+  triggers:
+    - type: "ConfigChange"
+    - type: "ImageChange"
+  source:
+    dockerfile: |
+      FROM registry.redhat.io/ubi8/ubi-init
+
+      RUN dnf install -y git make findutils gcc  # CNS-sfnettest build time
+      RUN dnf install -y pciutils                # (Optional) sfnt-pingpong runtime
+
+      WORKDIR /build/
+      RUN git clone https://github.com/Xilinx-CNS/cns-sfnettest.git
+
+      WORKDIR /build/cns-sfnettest/src
+      RUN make
+
+  strategy:
+    dockerStrategy:
+      buildArgs:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: onload-sfnettest:latest
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: onload-sfnettest-server
+  namespace: default
+  annotations:
+    k8s.v1.cni.cncf.io/networks: ipvlan-sf0
+spec:
+  restartPolicy: Always
+  securityContext:
+    allowPrivilegeEscalation: false
+    runAsUser: 0
+  containers:
+  - name: onload-sfnettest-server
+    image: image-registry.openshift-image-registry.svc:5000/default/onload-sfnettest:latest
+    imagePullPolicy: Always
+    env:
+    - name: LD_PRELOAD
+      value: /opt/onload/usr/lib64/libonload.so
+    command:
+    - /build/cns-sfnettest/src/sfnt-pingpong
+    resources:
+      limits:
+        amd.com/onload: 1
+    volumeMounts:
+    - name: onload-volume
+      mountPath: "/opt/onload"
+    securityContext:
+      privileged: true
+  nodeName: compute-0
+  initContainers:
+  - name: init-onload-user
+    image: image-registry.openshift-image-registry.svc:5000/onload-user/onload-user
+    imagePullPolicy: Always
+    volumeMounts:
+    - name: onload-volume
+      mountPath: "/tmp/onload"
+  volumes:
+  - name: onload-volume
+    emptyDir: {}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: onload-sfnettest-client
+  namespace: default
+  annotations:
+    k8s.v1.cni.cncf.io/networks: ipvlan-sf0
+spec:
+  restartPolicy: Never
+  securityContext:
+    allowPrivilegeEscalation: false
+    runAsUser: 0
+  containers:
+  - name: onload-sfnettest-client
+    image: image-registry.openshift-image-registry.svc:5000/default/onload-sfnettest:latest
+    imagePullPolicy: Always
+    command:
+    - /sbin/init
+    resources:
+      limits:
+        amd.com/onload: 1
+    volumeMounts:
+    - name: onload-volume
+      mountPath: "/opt/onload"
+    securityContext:
+      privileged: true
+  nodeName: compute-1
+  initContainers:
+  - name: init-onload-user
+    image: image-registry.openshift-image-registry.svc:5000/onload-user/onload-user
+    imagePullPolicy: Always
+    volumeMounts:
+    - name: onload-volume
+      mountPath: "/tmp/onload"
+  volumes:
+  - name: onload-volume
+    emptyDir: {}

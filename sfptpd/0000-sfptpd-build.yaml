@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: MIT
+# (c) Copyright 2023 Advanced Micro Devices, Inc.
+
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  labels:
+    app: sfptpd
+  name: sfptpd
+  namespace: sfptpd
+spec: {}
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: sfptpd-builder
+  name: sfptpd-builder
+  namespace: sfptpd
+spec:
+  nodeSelector:
+    node-role.kubernetes.io/worker: ""
+  runPolicy: "Serial"
+  triggers:
+    - type: "ConfigChange"
+    - type: "ImageChange"
+  strategy:
+    dockerStrategy:
+      buildArgs:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: sfptpd:latest
+  source:
+    dockerfile: |
+      FROM registry.access.redhat.com/ubi9/ubi-minimal AS build
+      WORKDIR src
+      RUN microdnf -y install make gcc tar bzip2 redhat-rpm-config
+      RUN microdnf -y --enablerepo=ubi-9-baseos-source download --source libmnl libcap
+      ADD https://github.com/Xilinx-CNS/sfptpd/archive/refs/heads/master.tar.gz sfptpd.tar.gz
+
+      RUN mkdir libcap libmnl sfptpd
+      RUN sh -c 'rpm -i libcap-*.src.rpm' \
+       && sh -c 'tar xzf ~/rpmbuild/SOURCES/libcap-*.tar.gz --strip-components=1 -C libcap' \
+       && make -C libcap/libcap install
+      RUN sh -c 'rpm -i libmnl-*.src.rpm' \
+       && sh -c 'tar xjf ~/rpmbuild/SOURCES/libmnl-*.tar.bz2 --strip-components=1 -C libmnl' \
+       && { cd libmnl && ./configure --prefix=/usr && make install; }
+      RUN tar xzf sfptpd.tar.gz --strip-components=1 -C sfptpd \
+       && make -C sfptpd patch_version
+      # Use the platform's standard build flags to get all the hardening options.
+      # Macros from redhat-rpm-config package
+      RUN \
+       CFLAGS="$(rpm --eval %{__global_cflags})" \
+       LDFLAGS="$(rpm --eval %{__global_ldflags})" \
+       DESTDIR="/staged" \
+       INST_INITS="" \
+       make -C sfptpd -j 10 install
+
+      FROM registry.access.redhat.com/ubi9/ubi-minimal AS runtime
+      RUN microdnf -y install libmnl
+      COPY --from=build /staged /
+      WORKDIR /var/lib/sfptpd
+      ENTRYPOINT sfptpd "$@"

@@ -1,0 +1,71 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2023 Advanced Micro Devices, Inc.
+
+variant: openshift
+version: 4.12.0
+metadata:
+  name: 99-sfc-machineconfig
+  labels:
+    machineconfiguration.openshift.io/role: worker
+systemd:
+  units:
+    - name: sfc-replace-kernel-module.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Replace in-tree kernel module with oot kernel module
+        Before=network-pre.target
+        Wants=network-pre.target
+        DefaultDependencies=no
+
+        [Service]
+        User=root
+        Type=oneshot
+        TimeoutSec=10
+        ExecStartPre=ls /usr/local/bin
+        ExecStart=/usr/local/bin/sfc-replace-kernel-module.sh
+        PrivateTmp=yes
+        RemainAfterExit=no
+        TimeoutSec=60
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: sfc-day-zero-loading.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Pull oot kernel module image
+        After=network-online.target
+        Wants=network-online.target
+        DefaultDependencies=no
+
+        [Service]
+        User=root
+        Type=oneshot
+        ExecStart=/usr/local/bin/sfc-pull-kernel-module-image.sh
+        PrivateTmp=yes
+        RemainAfterExit=no
+        TimeoutSec=900
+
+        [Install]
+        WantedBy=multi-user.target
+    - name: crio-wipe.service
+      enabled: false
+      mask: true
+storage:
+    files:
+        - path: /usr/local/bin/sfc-replace-kernel-module.sh
+          mode: 0511
+          overwrite: true
+          user:
+            name: root
+          contents:
+            local: sfc-replace-kernel-module.sh
+        - path: /usr/local/bin/sfc-pull-kernel-module-image.sh
+          mode: 0493
+          overwrite: true
+          user:
+            name: root
+          contents:
+            local:  sfc-pull-kernel-module-image.sh
