@@ -10,7 +10,10 @@ import (
 
 func main() {
 	flag.Parse()
-	flag.Lookup("logtostderr").Value.Set("true")
+	err := flag.Lookup("logtostderr").Value.Set("true")
+	if err != nil {
+		glog.Fatalf("Failed to initialise device plugin: %v", err)
+	}
 	glog.Info("Starting device plugin")
 	manager, err := NewNicManager()
 	if err != nil {

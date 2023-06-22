@@ -75,7 +75,10 @@ func (rpc *RPCServer) Serve() {
 	grpcServer := grpc.NewServer([]grpc.ServerOption{}...)
 	pluginapi.RegisterDevicePluginServer(grpcServer, rpc)
 	glog.Infof("RPC server listening on %s", rpc.listenSockPath)
-	grpcServer.Serve(listenSock)
+	err = grpcServer.Serve(listenSock)
+	if err != nil {
+		glog.Fatalf("grpcServer.Serve failed (%v)", err)
+	}
 }
 
 func (rpc *RPCServer) isUp() bool {
