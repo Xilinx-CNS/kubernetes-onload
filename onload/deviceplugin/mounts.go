@@ -101,7 +101,10 @@ func (manager *NicManager) initMounts() {
 	}
 
 	for _, path := range libraryMounts {
-		manager.addLibraryMounts(path)
+		err := manager.addLibraryMounts(path)
+		if err != nil {
+			glog.Warningf("Failed to add library mount for %s (%v)", path, err)
+		}
 	}
 
 	manager.envs["LD_PRELOAD"] = path.Join(destLibDir, lib64path, "libonload.so")
