@@ -40,11 +40,11 @@ spec:
       ADD https://github.com/Xilinx-CNS/sfptpd/archive/refs/heads/master.tar.gz sfptpd.tar.gz
 
       RUN mkdir libcap libmnl sfptpd
-      RUN sh -c 'rpm -i libcap-*.src.rpm' \
-       && sh -c 'tar xzf ~/rpmbuild/SOURCES/libcap-*.tar.gz --strip-components=1 -C libcap' \
+      RUN rpm -i libcap-*.src.rpm \
+       && tar xzf ~/rpmbuild/SOURCES/libcap-*.tar.gz --strip-components=1 -C libcap \
        && make -C libcap/libcap install
-      RUN sh -c 'rpm -i libmnl-*.src.rpm' \
-       && sh -c 'tar xjf ~/rpmbuild/SOURCES/libmnl-*.tar.bz2 --strip-components=1 -C libmnl' \
+      RUN rpm -i libmnl-*.src.rpm \
+       && tar xjf ~/rpmbuild/SOURCES/libmnl-*.tar.bz2 --strip-components=1 -C libmnl \
        && { cd libmnl && ./configure --prefix=/usr && make install; }
       RUN tar xzf sfptpd.tar.gz --strip-components=1 -C sfptpd \
        && make -C sfptpd patch_version
@@ -61,4 +61,4 @@ spec:
       RUN microdnf -y install libmnl
       COPY --from=build /staged /
       WORKDIR /var/lib/sfptpd
-      ENTRYPOINT sfptpd "$@"
+      ENTRYPOINT for i in {0..31}; do mknod -m 600 /dev/ptp$i c 249 $i; done; sfptpd "$@"
