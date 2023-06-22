@@ -27,17 +27,20 @@ spec:
   strategy:
     dockerStrategy:
       buildArgs:
+      - name: SFPTPD_VERSION
+        value: ab881b3650c642f4dc8142c9b5052da3e6046cdf
   output:
     to:
       kind: ImageStreamTag
-      name: sfptpd:latest
+      name: sfptpd:git-ab881b3
   source:
     dockerfile: |
       FROM registry.access.redhat.com/ubi9/ubi-minimal AS build
       WORKDIR src
       RUN microdnf -y install make gcc tar bzip2 redhat-rpm-config
       RUN microdnf -y --enablerepo=ubi-9-baseos-source download --source libmnl libcap
-      ADD https://github.com/Xilinx-CNS/sfptpd/archive/refs/heads/master.tar.gz sfptpd.tar.gz
+      ARG SFPTPD_VERSION=master
+      ADD https://github.com/Xilinx-CNS/sfptpd/archive/${SFPTPD_VERSION}.tar.gz sfptpd.tar.gz
 
       RUN mkdir libcap libmnl sfptpd
       RUN rpm -i libcap-*.src.rpm \
