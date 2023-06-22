@@ -124,6 +124,6 @@ Kustomize will remove build config but not build products. Confirm the state of 
 ```
 $ oc get image | grep onload
 ```
-Remove any outstanding manually with `oc image delete`. (Not providing any automated invocation to prevent removal of the false-positive images.)
+Remove any outstanding manually with `oc delete image`. (Not providing any automated invocation to prevent removal of the false-positive images.)
 
 Copyright (c) 2023 Advanced Micro Devices, Inc.
