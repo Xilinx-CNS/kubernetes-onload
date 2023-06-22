@@ -44,7 +44,7 @@ Create and apply the composed Kustomize manifest that defines Onload resources, 
 ```
 $ oc apply -f onload/imagestream/imagestream.yaml
 $ oc apply [--dry-run=client] -k onload/dev
-$ oc start-build onload-device-plugin -n onload-device-plugin --from-dir onload/deviceplugin
+$ oc start-build dev-onload-device-plugin -n onload-device-plugin --from-dir onload/deviceplugin
 ```
 
 ### Disable chronyd
