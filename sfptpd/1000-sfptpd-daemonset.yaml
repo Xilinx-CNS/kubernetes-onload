@@ -75,7 +75,7 @@ spec:
       nodeSelector:
         node-role.kubernetes.io/worker: ""
       containers:
-      - image: image-registry.openshift-image-registry.svc:5000/sfptpd/sfptpd:latest
+      - image: image-registry.openshift-image-registry.svc:5000/sfptpd/sfptpd:git-ab881b3
         name: sfptpd
         imagePullPolicy: Always
         volumeMounts:
