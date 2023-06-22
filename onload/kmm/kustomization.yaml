@@ -10,4 +10,4 @@ configMapGenerator:
   files:
   - dockerfile=Dockerfile
 configurations:
-- module-dockerfile-nameref.yaml
+- module-nameref.yaml

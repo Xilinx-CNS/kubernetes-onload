@@ -5,3 +5,7 @@ nameReference:
   fieldSpecs:
   - path: spec/moduleLoader/container/kernelMappings/build/dockerfileConfigMap
     kind: Module
+- kind: ServiceAccount
+  fieldSpecs:
+  - path: spec/moduleLoader/serviceAccountName
+    kind: Module
