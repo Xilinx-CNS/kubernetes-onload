@@ -1,4 +1,4 @@
-# Onload Operator v3 for Kubernetes and OpenShift
+# Onload Integration for Kubernetes and OpenShift
 
 ## Deployment guide
 
