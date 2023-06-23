@@ -9,6 +9,8 @@ spec:
     container:
       modprobe:
         moduleName: onload
+        parameters:
+        - '--first-time'
       kernelMappings:
         - regexp: '^.*\.x86_64$'
           containerImage: image-registry.openshift-image-registry.svc:5000/openshift-kmm/onload-module:latest
