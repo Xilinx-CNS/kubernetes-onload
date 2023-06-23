@@ -39,13 +39,16 @@ E.g. OpenShift 4.10.62 -> 4.10.0
 
 ### Onload manifests
 
-Create and apply the composed Kustomize manifest that defines Onload resources, including namespaces:
+Create and apply the composed Kustomize manifest that defines Onload resources:
 
 ```
 $ oc apply -f onload/imagestream/imagestream.yaml
+$ oc new-project onload-runtime
 $ oc apply [--dry-run=client] -k onload/dev
-$ oc start-build dev-onload-device-plugin -n onload-device-plugin --from-dir onload/deviceplugin
+$ oc start-build dev-onload-device-plugin -n onload-runtime --from-dir onload/deviceplugin
 ```
+
+The `onload-runtime` name of namespace and project is configurable. The users who change it, also need to patch the `namespace` field in the corresponding "kustomization.yaml" file, e.g. "onload/dev/kustomization.yaml" in the above case.
 
 ### Disable chronyd
 
@@ -109,6 +112,7 @@ $ oc delete -f examples/cns-sfnettest.yaml
 $ oc delete project sfptpd
 $ oc delete -f 99-worker-chronyd.yaml
 $ oc delete -k onload/dev
+$ oc delete project onload-runtime
 $ oc delete -f onload/imagestream/imagestream.yaml
 $ oc delete -f sfc/mco/99-sfc-machineconfig.yaml
 ```

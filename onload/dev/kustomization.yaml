@@ -10,8 +10,8 @@ patches:
 
 # Onload KMM debug build
 - target:
-    namespace: openshift-kmm
     kind: Module
+    name: onload-module
   patch: |
     - op: replace
       path: /spec/moduleLoader/container/kernelMappings/0/build/buildArgs/0/value
@@ -19,8 +19,8 @@ patches:
 
 # Onload userspace debug build
 - target:
-    namespace: onload-user
     kind: BuildConfig
+    name: onload-user
   patch: |
     - op: add
       path: /spec/strategy/dockerStrategy/buildArgs/0/value

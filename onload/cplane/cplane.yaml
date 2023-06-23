@@ -1,21 +1,14 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 apiVersion: v1
-kind: Namespace
-metadata:
-  name: onload-cplane
----
-apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: onload-cplane-sa
-  namespace: onload-cplane
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: onload-cplane-role
-  namespace: onload-cplane
 rules:
 - apiGroups:
   - security.openshift.io
@@ -30,7 +23,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: onload-cplane-rb
-  namespace: onload-cplane
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -43,7 +35,6 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: onload-cplane-ds
-  namespace: onload-cplane
 spec:
   selector:
     matchLabels:

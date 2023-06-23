@@ -1,17 +1,11 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: onload-device-plugin
----
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
   labels:
     app: onload-device-plugin
   name: onload-device-plugin
-  namespace: onload-device-plugin
 spec:
   nodeSelector:
     node-role.kubernetes.io/worker: ""
