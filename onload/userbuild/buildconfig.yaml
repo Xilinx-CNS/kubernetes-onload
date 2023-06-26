@@ -3,8 +3,6 @@
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
-  labels:
-    app: onload-user
   name: onload-user
 spec:
   nodeSelector:

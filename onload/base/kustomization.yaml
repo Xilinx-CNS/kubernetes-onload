@@ -8,3 +8,5 @@ resources:
 - ../userbuild/
 - ../cplane/
 - ../deviceplugin/
+commonLabels:
+  app.kubernetes.io/name: onload

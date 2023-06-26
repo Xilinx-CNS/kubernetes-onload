@@ -3,8 +3,6 @@
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
-  labels:
-    app: onload-device-plugin
   name: onload-device-plugin
 spec:
   nodeSelector:
