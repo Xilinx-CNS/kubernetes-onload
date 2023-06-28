@@ -47,7 +47,9 @@ $ oc new-project onload-runtime
 $ oc apply [--dry-run=client] -k onload/dev
 ```
 
-The `onload-runtime` name of namespace and project is configurable. The users who change it, also need to patch the `namespace` field in the corresponding "kustomization.yaml" file, e.g. "onload/dev/kustomization.yaml" in the above case.
+The "onload/imagestream/imagestream.yaml" manifest will create the new `onload-clusterlocal` namespace for ImageStream(s), referring to the Onload resources built locally in the cluster.
+
+Another `onload-runtime` namespace is configurable. The users who change it, also need to patch the `namespace` field in the corresponding "kustomization.yaml" file, e.g. "onload/dev/kustomization.yaml" in the above case.
 
 ### Disable chronyd
 

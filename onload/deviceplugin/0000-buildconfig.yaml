@@ -17,7 +17,7 @@ spec:
         from:
           kind: ImageStreamTag
           name: onload-user:git27b3826
-          namespace: onload-artifacts
+          namespace: onload-clusterlocal
   source:
     dockerfile: (placeholder)
 
@@ -28,4 +28,4 @@ spec:
     to:
       kind: ImageStreamTag
       name: onload-device-plugin:latest
-      namespace: onload-artifacts
+      namespace: onload-clusterlocal
