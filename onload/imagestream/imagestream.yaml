@@ -3,13 +3,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: onload-artifacts
+  name: onload-clusterlocal
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: system:image-builder
-  namespace: onload-artifacts
+  namespace: onload-clusterlocal
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -23,12 +23,12 @@ apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:
   name: onload-user
-  namespace: onload-artifacts
+  namespace: onload-clusterlocal
 spec: {}
 ---
 apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:
   name: onload-device-plugin
-  namespace: onload-artifacts
+  namespace: onload-clusterlocal
 spec: {}
