@@ -45,7 +45,6 @@ Create and apply the composed Kustomize manifest that defines Onload resources:
 $ oc apply -f onload/imagestream/imagestream.yaml
 $ oc new-project onload-runtime
 $ oc apply [--dry-run=client] -k onload/dev
-$ oc start-build dev-onload-device-plugin -n onload-runtime --from-dir onload/deviceplugin
 ```
 
 The `onload-runtime` name of namespace and project is configurable. The users who change it, also need to patch the `namespace` field in the corresponding "kustomization.yaml" file, e.g. "onload/dev/kustomization.yaml" in the above case.

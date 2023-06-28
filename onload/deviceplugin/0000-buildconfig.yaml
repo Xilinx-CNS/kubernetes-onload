@@ -10,6 +10,14 @@ spec:
   nodeSelector:
     node-role.kubernetes.io/worker: ""
   runPolicy: "Serial"
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChange:
+        from:
+          kind: ImageStreamTag
+          name: onload-user:latest
+          namespace: onload-artifacts
   source:
     dockerfile: (placeholder)
 
