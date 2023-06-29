@@ -80,7 +80,7 @@ Here we suggest running the `sfnt-pingpong` from [https://github.com/Xilinx-CNS/
 Create a new BuildConfig to build the app and a couple of new demo pods with:
 
 ```
-$ oc apply -f examples/cns-sfnettest.yaml
+$ oc apply -k examples/profiles/latency/
 ```
 
 It should create pods `onload-sfnettest-server` and `onload-sfnettest-client` on workers `compute-0` and `compute-1` respectively.
@@ -96,7 +96,7 @@ The server pod is already running the accelerated `sfnt-pingpong` instance.
 
 Run the client:
 ```
-sh-4.4# LD_PRELOAD=/opt/onload/usr/lib64/libonload.so ./sfnt-pingpong udp 198.19.0.1
+sh-4.4# ./sfnt-pingpong udp 198.19.0.1
 ```
 
 Try running with and without `onload` to compare the reported performance.
@@ -107,7 +107,7 @@ Based on [examples/README.md](examples/README.md).
 
 Use `oc delete` to uninstall Onload and example pods:
 ```
-$ oc delete -f examples/cns-sfnettest.yaml
+$ oc delete -k examples/sfnettest/
 $ oc delete project sfptpd
 $ oc delete -f 99-worker-chronyd.yaml
 $ oc delete -k onload/dev
