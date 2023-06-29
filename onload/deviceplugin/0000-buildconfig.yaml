@@ -16,7 +16,7 @@ spec:
       imageChange:
         from:
           kind: ImageStreamTag
-          name: onload-user:latest
+          name: onload-user:git27b3826
           namespace: onload-artifacts
   source:
     dockerfile: (placeholder)
