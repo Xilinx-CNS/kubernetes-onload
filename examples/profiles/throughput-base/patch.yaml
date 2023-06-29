@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: onload-sfnettest-server
+spec:
+  containers:
+    - name: onload-sfnettest-server
+      envFrom:
+      - configMapRef:
+          name: onload-throughput-base-profile
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: onload-sfnettest-client
+spec:
+  containers:
+    - name: onload-sfnettest-client
+      envFrom:
+      - configMapRef:
+          name: onload-throughput-base-profile
