@@ -23,12 +23,15 @@ spec:
   source:
     dockerfile: |
       FROM registry.redhat.io/ubi8/ubi-init
+      ARG SFNETTEST_VERSION
 
       RUN dnf install -y git make findutils gcc  # CNS-sfnettest build time
       RUN dnf install -y pciutils                # (Optional) sfnt-pingpong runtime
 
       WORKDIR /build/
-      RUN git clone https://github.com/Xilinx-CNS/cns-sfnettest.git
+      ADD https://github.com/Xilinx-CNS/cns-sfnettest/archive/refs/tags/${SFNETTEST_VERSION}.tar.gz cns-sfnettest.tar.gz
+      RUN mkdir -p /build/cns-sfnettest
+      RUN tar xzf cns-sfnettest.tar.gz -C /build/cns-sfnettest --strip-components=1
 
       WORKDIR /build/cns-sfnettest/src
       RUN make
@@ -36,10 +39,12 @@ spec:
   strategy:
     dockerStrategy:
       buildArgs:
+      - name: SFNETTEST_VERSION
+        value: "sfnettest-1.6.0-rc1"
   output:
     to:
       kind: ImageStreamTag
-      name: onload-sfnettest:latest
+      name: onload-sfnettest:sfnettest-1.6.0-rc1
 ---
 apiVersion: v1
 kind: Pod
@@ -56,7 +61,7 @@ spec:
       type: RuntimeDefault
   containers:
   - name: onload-sfnettest-server
-    image: image-registry.openshift-image-registry.svc:5000/default/onload-sfnettest:latest
+    image: image-registry.openshift-image-registry.svc:5000/default/onload-sfnettest:sfnettest-1.6.0-rc1
     imagePullPolicy: Always
     command:
     - /build/cns-sfnettest/src/sfnt-pingpong
@@ -85,7 +90,7 @@ spec:
       type: RuntimeDefault
   containers:
   - name: onload-sfnettest-client
-    image: image-registry.openshift-image-registry.svc:5000/default/onload-sfnettest:latest
+    image: image-registry.openshift-image-registry.svc:5000/default/onload-sfnettest:sfnettest-1.6.0-rc1
     imagePullPolicy: Always
     command:
     - /sbin/init
