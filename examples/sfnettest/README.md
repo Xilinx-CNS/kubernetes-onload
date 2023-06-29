@@ -7,7 +7,7 @@ Here, we run a small utility `sfnt-pingpong` to demonstrate Onload acceleration.
 Create new `onload-sfnettest` containers with:
 
 ```
-$ oc apply -f examples/cns-sfnettest.yaml
+$ oc apply -k examples/sfnettest/
 ```
 This will create a new BuildConfig and then a couple of pods running on the `compute-0` and `compute-1` workers. These pods will have Onload user components installed and the `sfnt-pingpong` binary in the working directory.
 
