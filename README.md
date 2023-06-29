@@ -99,15 +99,13 @@ Run the client:
 sh-4.4# ./sfnt-pingpong udp 198.19.0.1
 ```
 
-Try running with and without `onload` to compare the reported performance.
-
-Based on [examples/README.md](examples/README.md).
+Based on [examples/sfnettest/README.md](examples/sfnettest/README.md).
 
 ## Uninstall
 
 Use `oc delete` to uninstall Onload and example pods:
 ```
-$ oc delete -k examples/sfnettest/
+$ oc delete -k examples/profiles/latency
 $ oc delete project sfptpd
 $ oc delete -f 99-worker-chronyd.yaml
 $ oc delete -k onload/dev
