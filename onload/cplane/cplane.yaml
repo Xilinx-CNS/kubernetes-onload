@@ -18,6 +18,9 @@ rules:
   - use
   resourceNames:
   - privileged
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -53,16 +56,17 @@ spec:
       hostIPC: true
       containers:
       - name: onload-cplane
-        image: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-user:git27b3826
+        image: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-cplane:latest
         imagePullPolicy: Always
-        command:
-        - /bin/sh
-        - -c
-        args:
-        - set -e;
-          echo /usr/bin/crictl | tee /sys/module/onload/parameters/cplane_server_path;
-          declare -r container_id=$(awk -F'[-./]' '/crio-/{print $(NF - 1); exit}' /proc/self/cgroup);
-          echo exec ${container_id} /opt/onload/sbin/onload_cp_server -K | tee /sys/module/onload/parameters/cplane_server_params;
-          sleep infinity
+        command: ["/usr/bin/onload-cplane-container-utility"]
         securityContext:
           privileged: true
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
