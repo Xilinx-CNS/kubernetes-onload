@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 FROM registry.redhat.io/ubi8/ubi-minimal as builder
 ARG ONLOAD_BUILD_PARAMS
+ARG ONLOAD_VERSION
 
 # Install requirements for building onload userland
 RUN microdnf install -y binutils \
@@ -37,10 +38,10 @@ RUN rpm -i libcap-*.src.rpm \
 # END
 
 # Build onload userland components
-WORKDIR /build/
-RUN git clone https://github.com/Xilinx-CNS/onload.git
-
-WORKDIR /build/onload
+ADD https://github.com/Xilinx-CNS/onload/archive/${ONLOAD_VERSION}.tar.gz onload.tar.gz
+RUN mkdir -p /build/onload
+RUN tar xzf onload.tar.gz -C /build/onload --strip-components=1
+WORKDIR /build/onload/
 RUN scripts/onload_build --user ${ONLOAD_BUILD_PARAMS}
 
 RUN mkdir /opt/onload

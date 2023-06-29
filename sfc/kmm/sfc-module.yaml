@@ -12,12 +12,14 @@ data:
     FROM ${DTK_AUTO} as builder
 
     ARG KERNEL_VERSION
+    ARG ONLOAD_VERSION
 
     WORKDIR /build/
 
-    RUN git clone --depth 1 https://github.com/Xilinx-CNS/onload.git
-
-    WORKDIR /build/onload
+    ADD https://github.com/Xilinx-CNS/onload/archive/${ONLOAD_VERSION}.tar.gz onload.tar.gz
+    RUN mkdir -p /build/onload
+    RUN tar xzf onload.tar.gz -C /build/onload --strip-components=1
+    WORKDIR /build/onload/
 
     # Currently there are issues regarding when building the sfc driver due to
     # differences between the DTK image used for building and the ubi image used
@@ -53,9 +55,12 @@ spec:
         moduleName: sfc
       kernelMappings:
         - regexp: '^.*\.x86_64$'
-          containerImage: image-registry.openshift-image-registry.svc:5000/openshift-kmm/sfc-module:${KERNEL_FULL_VERSION}
+          containerImage: image-registry.openshift-image-registry.svc:5000/openshift-kmm/sfc-module:git27b3826-${KERNEL_FULL_VERSION}
           build:
             dockerfileConfigMap:
               name: sfc-module-dockerfile
+            buildArgs:
+            - name: ONLOAD_VERSION
+              value: 27b38261cfc394012413ee6cbeef8f1ae781489c
   selector: # top-level selector
     kubernetes.io/arch: amd64

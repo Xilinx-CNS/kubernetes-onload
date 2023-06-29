@@ -4,12 +4,14 @@ ARG DTK_AUTO
 
 FROM ${DTK_AUTO} as builder
 ARG ONLOAD_BUILD_PARAMS
+ARG ONLOAD_VERSION
 ARG KERNEL_VERSION
 
 WORKDIR /build/
-RUN git clone --depth 1 https://github.com/Xilinx-CNS/onload.git
-
-WORKDIR /build/onload
+ADD https://github.com/Xilinx-CNS/onload/archive/${ONLOAD_VERSION}.tar.gz onload.tar.gz
+RUN mkdir -p /build/onload
+RUN tar xzf onload.tar.gz -C /build/onload --strip-components=1
+WORKDIR /build/onload/
 
 RUN scripts/onload_build --kernel --kernelver ${KERNEL_VERSION} ${ONLOAD_BUILD_PARAMS}
 RUN scripts/onload_install --nobuild --kernelfiles --kernelver ${KERNEL_VERSION}

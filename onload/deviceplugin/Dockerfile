@@ -8,7 +8,7 @@ RUN git clone --depth 1 https://github.com/Xilinx-CNS/kubernetes-onload.git
 WORKDIR /app/kubernetes-onload/onload/deviceplugin
 RUN go build -o /app/onload-plugin
 
-FROM image-registry.openshift-image-registry.svc:5000/onload-artifacts/onload-user:latest
+FROM image-registry.openshift-image-registry.svc:5000/onload-artifacts/onload-user:git27b3826
 RUN microdnf install lshw
 COPY --from=builder /app/onload-plugin /usr/bin/onload-plugin
 CMD ["/usr/bin/onload-plugin"]
