@@ -27,7 +27,7 @@ For each appropriate node in the cluster:
 Then apply the manifest:
 
 ```console
-$ oc apply -f sfc/kmm/sfc-module.yaml
+$ oc apply -k sfc/kmm/
 ```
 
 #### Day-0 deployment using MachineConfig
@@ -140,7 +140,7 @@ $ oc delete -f onload/imagestream/imagestream.yaml
 
 To remove SFC Module:
 ```console
-$ oc delete -f sfc/kmm/sfc-module.yaml
+$ oc delete -k sfc/kmm/
 ```
 
 To remove SFC MachineConfig

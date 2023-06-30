@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- sfc-module.yaml
+namespace: openshift-kmm
+configMapGenerator:
+- name: sfc-module-dockerfile
+  files:
+  - dockerfile=Dockerfile
+configurations:
+- module-nameref.yaml
