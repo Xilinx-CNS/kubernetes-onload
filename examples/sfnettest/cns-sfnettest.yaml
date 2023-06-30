@@ -36,6 +36,8 @@ spec:
       WORKDIR /build/cns-sfnettest/src
       RUN make
 
+      USER 1001
+
   strategy:
     dockerStrategy:
       buildArgs:
