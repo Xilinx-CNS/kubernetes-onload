@@ -172,4 +172,132 @@ $ oc get image | grep onload
 ```
 Remove any outstanding manually with `oc delete image`. (Not providing any automated invocation to prevent removal of the false-positive images.)
 
+## Deploying artifacts into an airgapped cluster
+
+### Images required
+
+This is a list of the images that are currently needed as reported by podman:
+```console
+$ sudo podman images --format "table {{.Repository}} {{.Tag}}"
+REPOSITORY                                                                                           TAG
+default-route-openshift-image-registry.apps.test.kube.test/default/onload-sfnettest                  sfnettest-1.6.0-rc1
+default-route-openshift-image-registry.apps.test.kube.test/sfptpd/sfptpd                             git-ab881b3
+default-route-openshift-image-registry.apps.test.kube.test/onload-clusterlocal/onload-module         git27b3826-4.18.0-372.49.1.el8_6.x86_64
+default-route-openshift-image-registry.apps.test.kube.test/onload-clusterlocal/onload-device-plugin  latest
+default-route-openshift-image-registry.apps.test.kube.test/onload-clusterlocal/onload-user           git27b3826
+default-route-openshift-image-registry.apps.test.kube.test/openshift-kmm/sfc-module                  git27b3826-4.18.0-372.49.1.el8_6.x86_64
+```
+
+### Getting the images
+
+The images can either be built using podman directly (currently unsupported) or
+within a cluster with access to a git web host, either github.com or a locally
+hosted clone of \<named repos\>.
+
+
+#### Pulling images from a cluster
+First follow the section about [logging in via podman](#podman-login) below.
+
+The images can be pulled via the following command:
+```console
+$ sudo podman pull ${REGHOST}/openshift-kmm/sfc-module:git27b3826-4.18.0-372.49.1.el8_6.x86_64 --tls-verify=false
+```
+
+Repeat this process for each image you want to pull from the cluster.
+The image specification to pull from the cluster should be of the form:
+```
+REGISTRY/OPENSHIFT_NAMESPACE/IMAGE_NAME:IMAGE_TAG
+```
+
+`podman save` can be used to save the into a local file, e.g:
+```console
+$ sudo podman save -o images/sfc.tar default-route-openshift-image-registry.apps.test.kube.test/openshift-kmm/sfc-module:git27b3826-4.18.0-372.49.1.el8_6.x86_64
+```
+which will write the image into `images/sfc.tar`. Then use `podman load` to
+load the image from the written file:
+```
+$ sudo podman load -i images.tar
+```
+
+### Podman login
+
+In order to be able to pull/push images into the cluster's image registry you
+must log in with podman.
+
+1. log in to openshift cluster
+```console
+$ oc login -u kubeadmin -p PASSWORD
+```
+2. Get the name of the image registry
+```console
+$ oc get route default-route -n openshift-image-registry --template='{{ .spec.host }}'
+```
+This can be stored in a local variable
+```console
+$ REGHOST=`oc get route default-route -n openshift-image-registry --template='{{ .spec.host }}'`
+```
+3. Actually login to the image registry with podman
+```console
+$ sudo podman login -u kubeadmin -p $(oc whoami -t) ${REGHOST} --tls-verify=false
+```
+
+#### A Note on `--tls-verify=false`
+
+Without doing any extra steps podman will complain about the certificates used
+by the image registry. For development purposes `--tls-verify=false` can be
+used to bypass this issue. Production environments shall follow internal
+certificate handling procedures to secure podman access.
+
+### Pushing the images to the cluster's image-registry
+
+For each image you want to push run the command:
+```console
+$ sudo podman push REGISTRY/OPENSHIFT_NAMESPACE/IMAGE_NAME:TAG --tls-verify=false
+```
+
+### Deploying sfc driver
+
+#### KMM deployment
+First remove the in-tree driver from the worker nodes
+```
+# rmmod sfc
+```
+This should allow the kmm to install the kernel module without issue.
+
+```console
+$ oc create -k sfc/deploy
+```
+#### MCO deployment (for day 0 deployments)
+
+```console
+$ butane sfc/mco/99-sfc-machineconfig.bu -d sfc/mco/ -o sfc/mco/99-sfc-machineconfig.yaml
+$ oc apply -f sfc/mco/99-sfc-machineconfig.yaml
+```
+
+### Deploying onload
+
+```console
+$ oc new-project onload-runtime
+$ oc create -k onload/deploy
+```
+
+### Deploying sfptpd
+
+```console
+$ oc create -k sfptpd/deploy
+```
+
+### Deploying the example application (sfnt-pingpong)
+
+```console
+$ oc create -k examples/sfnettest/deploy
+```
+
+or to use an example profile:
+```console
+$ oc create -k examples/profiles/latency/deploy
+```
+
+Then follow instruction for running the client in [examples/README.md](examples/README.md)
+
 Copyright (c) 2023 Advanced Micro Devices, Inc.
