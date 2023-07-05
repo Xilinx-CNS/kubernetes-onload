@@ -90,13 +90,23 @@ E.g. OpenShift 4.10.62 -> 4.10.0
 
 ### sfptpd
 
-```
-$ oc new-project sfptpd
-$ oc create -f sfptpd/0000-sfptpd-build.yaml
-$ oc create -f sfptpd/1000-sfptpd-daemonset.yaml
+```console
+$ oc create -k sfptpd
 ```
 
-Please note that `sfptpd/1000-sfptpd-daemonset.yaml` uses the interface name `sf0` as a placeholder for development purposes. This should be modified to use an appropriate value before deploying to the cluster.
+or with separate build and deploy processes:
+
+To build images in cluster:
+```console
+$ oc create -k sfptpd/build
+```
+
+To deploy:
+```console
+$ oc create -f sfptpd/deploy
+```
+
+Please note that `sfptpd/deploy/1000-sfptpd-daemonset.yaml` uses the interface name `sf0` as a placeholder for development purposes. This should be modified to use an appropriate value before deploying to the cluster.
 
 ### Onloaded application
 
