@@ -34,3 +34,5 @@ semantic.cache
 Thumbs.db
 .reviewboardrc
 .gdb_history
+*.tar
+*.tar.gz
