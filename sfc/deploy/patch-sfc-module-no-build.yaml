@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+apiVersion: kmm.sigs.x-k8s.io/v1beta1
+kind: Module
+metadata:
+  name: sfc-module
+  namespace: openshift-kmm
+spec:
+  moduleLoader:
+    container:
+      modprobe:
+        moduleName: sfc
+      kernelMappings:
+        - regexp: '^.*\.x86_64$'
+          containerImage: image-registry.openshift-image-registry.svc:5000/openshift-kmm/sfc-module:git27b3826-${KERNEL_FULL_VERSION}
+          build:
+  selector: # top-level selector
+    kubernetes.io/arch: amd64
