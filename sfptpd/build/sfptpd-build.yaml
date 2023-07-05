@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: MIT
 # (c) Copyright 2023 Advanced Micro Devices, Inc.
-
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sfptpd
+---
 apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:
