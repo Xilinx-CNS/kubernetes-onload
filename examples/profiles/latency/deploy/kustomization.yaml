@@ -3,5 +3,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- ../../sfnettest/build
-- deploy/
+- ../../../sfnettest/deploy/
+
+configMapGenerator:
+- name: onload-latency-profile
+  envs:
+  - latency.conf
+
+patchesStrategicMerge:
+- patch-add-configmap.yaml

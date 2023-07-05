@@ -1,53 +1,5 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
----
-apiVersion: image.openshift.io/v1
-kind: ImageStream
-metadata:
-  name: onload-sfnettest
-  namespace: default
-spec: {}
----
-apiVersion: build.openshift.io/v1
-kind: BuildConfig
-metadata:
-  name: onload-sfnettest
-  namespace: default
-spec:
-  nodeSelector:
-    node-role.kubernetes.io/worker: ""
-  runPolicy: "Serial"
-  triggers:
-    - type: "ConfigChange"
-    - type: "ImageChange"
-  source:
-    dockerfile: |
-      FROM registry.redhat.io/ubi8/ubi-init
-      ARG SFNETTEST_VERSION
-
-      RUN dnf install -y git make findutils gcc  # CNS-sfnettest build time
-      RUN dnf install -y pciutils                # (Optional) sfnt-pingpong runtime
-
-      WORKDIR /build/
-      ADD https://github.com/Xilinx-CNS/cns-sfnettest/archive/refs/tags/${SFNETTEST_VERSION}.tar.gz cns-sfnettest.tar.gz
-      RUN mkdir -p /build/cns-sfnettest
-      RUN tar xzf cns-sfnettest.tar.gz -C /build/cns-sfnettest --strip-components=1
-
-      WORKDIR /build/cns-sfnettest/src
-      RUN make
-
-      USER 1001
-
-  strategy:
-    dockerStrategy:
-      buildArgs:
-      - name: SFNETTEST_VERSION
-        value: "sfnettest-1.6.0-rc1"
-  output:
-    to:
-      kind: ImageStreamTag
-      name: onload-sfnettest:sfnettest-1.6.0-rc1
----
 apiVersion: v1
 kind: Pod
 metadata:
