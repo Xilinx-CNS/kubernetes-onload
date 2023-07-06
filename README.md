@@ -257,12 +257,16 @@ $ sudo podman push REGISTRY/OPENSHIFT_NAMESPACE/IMAGE_NAME:TAG --tls-verify=fals
 
 ### Deploying sfc driver
 
-#### KMM deployment
-First remove the in-tree driver from the worker nodes
+#### KMM Module deployment
+
+If KMM v1.0 is used, the in-tree driver must be removed from the worker nodes
+before deployment. This is a one-time action which is automated by the
+MachineConfig component upon reboot. In KMM v1.1 onwards, add
+`inTreeModuleToRemove: sfc` to the `sfc` Module CR.
+
+```sh
+rmmod sfc
 ```
-# rmmod sfc
-```
-This should allow the kmm to install the kernel module without issue.
 
 ```console
 $ oc create -k sfc/deploy
