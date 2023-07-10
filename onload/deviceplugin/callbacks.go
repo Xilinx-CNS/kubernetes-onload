@@ -11,12 +11,18 @@ import (
 	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
-// GetDevicePluginOptions is not used here, but required by the device plugin API
+// GetDevicePluginOptions is used by the kubernetes device manager to check
+// which optional features we implement. Since we don't use either we can just
+// return false for both, which should prevent any headaches if the device
+// plugin gets requested to do something it doesn't support.
 func (rpc *RPCServer) GetDevicePluginOptions(
 	context.Context,
 	*pluginapi.Empty,
 ) (*pluginapi.DevicePluginOptions, error) {
-	return &pluginapi.DevicePluginOptions{}, nil
+	return &pluginapi.DevicePluginOptions{
+		PreStartRequired:                false,
+		GetPreferredAllocationAvailable: false,
+	}, nil
 }
 
 // PreStartContainer is not used here, but required by the device plugin API
@@ -71,4 +77,12 @@ func (rpc *RPCServer) Allocate(
 		resps.ContainerResponses = append(resps.ContainerResponses, &resp)
 	}
 	return &resps, nil
+}
+
+// GetPreferredAllocation is not used here, but required by the device plugin API
+func (rpc *RPCServer) GetPreferredAllocation(
+	context.Context,
+	*pluginapi.PreferredAllocationRequest,
+) (*pluginapi.PreferredAllocationResponse, error) {
+	return &pluginapi.PreferredAllocationResponse{}, nil
 }

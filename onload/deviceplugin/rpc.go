@@ -12,6 +12,7 @@ import (
 
 	"github.com/golang/glog"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
@@ -26,7 +27,7 @@ func grpcDial(sockPath string, timeout time.Duration) (*grpc.ClientConn, error) 
 	return grpc.DialContext(
 		ctx,
 		sockPath,
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 		grpc.WithContextDialer(dialUnix),
 	)
@@ -108,11 +109,21 @@ func (rpc *RPCServer) Register() {
 	}
 	defer conn.Close()
 
+	opts, err := rpc.GetDevicePluginOptions(context.Background(),
+		&pluginapi.Empty{})
+	if err != nil {
+		glog.Warningf("Failed to get DevicePluginOptions (%v)", err)
+		// It should be fine to continue, as the device manager will call
+		// GetDevicePluginOptions if any optional functions are availible.
+		opts = nil
+	}
+
 	client := pluginapi.NewRegistrationClient(conn)
 	req := &pluginapi.RegisterRequest{
 		Version:      pluginapi.Version,
 		Endpoint:     filepath.Base(rpc.listenSockPath),
 		ResourceName: resourceName,
+		Options:      opts,
 	}
 
 	_, err = client.Register(context.Background(), req)
