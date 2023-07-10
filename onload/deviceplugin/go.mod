@@ -5,16 +5,17 @@ module amd.com/onload-device-plugin
 go 1.20
 
 require (
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	google.golang.org/grpc v1.23.1
-	k8s.io/kubelet v0.17.0
+	github.com/golang/glog v1.1.1
+	google.golang.org/grpc v1.56.2
+	k8s.io/kubelet v0.27.3
 )
 
 require (
-	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d // indirect
-	github.com/golang/protobuf v1.3.2 // indirect
-	golang.org/x/net v0.0.0-20191004110552-13f9640d40b9 // indirect
-	golang.org/x/sys v0.0.0-20190826190057-c7b8b68b1456 // indirect
-	golang.org/x/text v0.3.2 // indirect
-	google.golang.org/genproto v0.0.0-20190502173448-54afdca5d873 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
+	golang.org/x/net v0.12.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230710151506-e685fd7b542b // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 )
