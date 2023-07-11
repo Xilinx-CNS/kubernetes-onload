@@ -8,13 +8,28 @@ Expected environment:
 - (WIP) Onload/master
 - (WIP) OCP 4.12 with:
   - Node Feature Discovery (NFD) Operator
-  - Kernel Module Management (KMM) Operator
+  - Kernel Module Management (KMM) Operator ([Redhat docs](https://docs.openshift.com/container-platform/4.12/hardware_enablement/kmm-kernel-module-management.html), [codebase docs](https://kmm.sigs.k8s.io/documentation/deploy_kmod/))
 
-### SFC out of tree driver
+### SFC out-of-tree driver
 
-The recommended way of installing onload's sfc driver is using [KMM](https://github.com/rh-ecosystem-edge/kernel-module-management/)
+This section may be skipped without affecting the other deployment steps, however, the out-of-tree `sfc` driver is currently required when using the provided `onload` driver with a Solarflare card.
+
+To dynamically load an out-of-tree `sfc` driver before accelerated workloads are started, follow [Deploy using KMM](#deploy-using-kmm). If newer driver features are required at boot time, also follow [Day-0 MachineConfig](#day-0-deployment-using-machineconfig).
+
+Alternatively, an out-of-tree `sfc` driver may be deployed with a user-supported method beyond the scope of this document, such as a custom kernel build or in-house OS image. Note that network interface names can be fixed with UDEV rules -- on a RHCOS node within OpenShift, the directory `/etc/udev/rules.d/` can be written to with a `MachineConfig` CR.
 
 #### Deploy using KMM
+
+_The recommended way to install onload's `sfc` driver._
+
+Applying the following manifest will cause the automated build and loading of the `sfc` driver. Specifically, the files in [sfc/kmm/](./sfc/kmm/) will configure a `Module` CR with instructions for KMM to build onload's `sfc` in a new container and deploy that to all nodes.
+
+To deploy only to nodes with Solarflare cards (PCIe ID 1924), modify the [Module YAML](./sfc/kmm/sfc-module.yaml) to utilise that NFD-provided node feature:
+
+```yaml
+  selector:
+    feature.node.kubernetes.io/pci-1924.present: true
+```
 
 Before you apply the `Module` custom resource for the SFC driver you must
 remove the existing in-tree driver.
