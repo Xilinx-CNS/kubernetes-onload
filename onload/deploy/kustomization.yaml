@@ -10,3 +10,10 @@ resources:
 patchesStrategicMerge:
 - patch-onload-module-no-build.yaml
 
+images:
+- name: cplane
+  newName: www.example.com/onload-user
+  newTag: enterpriseonload-8.1.0.2
+- name: device-plugin
+  newName: www.example.com/onload-device-plugin
+  newTag: enterpriseonload-8.1.0.2-latest

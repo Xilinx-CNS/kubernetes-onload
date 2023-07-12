@@ -268,6 +268,10 @@ MachineConfig component upon reboot. In KMM v1.1 onwards, add
 rmmod sfc
 ```
 
+_The kustomization patch file [sfc/deploy/patch-sfc-module-no-build.yaml](sfc/deploy/patch-sfc-module-no-build.yaml)
+will attempt to pull the images from the fictional image registry at
+`example.com` this file should be updated with the actual location of the image_
+
 ```console
 $ oc create -k sfc/deploy
 ```
@@ -279,6 +283,12 @@ $ oc apply -f sfc/mco/99-sfc-machineconfig.yaml
 ```
 
 ### Deploying onload
+
+
+_The kustomization file for deploy onload without building [sfc/deploy/kustomization.yaml](sfc/deploy/kustomization.yaml)
+and the patch file for the onload-module CR [sfc/deploy/patch-sfc-module-no-build.yaml](sfc/deploy/patch-sfc-module-no-build.yaml)
+will attempt to pull the images from the fictional image registry at
+`example.com` this should be updated with the actual location of the image_
 
 ```console
 $ oc new-project onload-runtime

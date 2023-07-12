@@ -8,3 +8,11 @@ resources:
 - ../kmm/
 - ../cplane/
 - ../deviceplugin/
+
+images:
+- name: cplane
+  newName: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-user
+  newTag: git27b3826
+- name: device-plugin
+  newName: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-device-plugin
+  newTag: latest

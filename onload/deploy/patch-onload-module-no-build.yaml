@@ -9,5 +9,5 @@ spec:
     container:
       kernelMappings:
         - regexp: '^.*\.x86_64$'
-          containerImage: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-module:git27b3826-${KERNEL_FULL_VERSION}
+          containerImage: www.example.com/onload-module:enterpriseonload-8.1.0.2-${KERNEL_FULL_VERSION}
           build:
