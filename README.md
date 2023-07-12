@@ -24,11 +24,22 @@ _The recommended way to install onload's `sfc` driver._
 
 Applying the following manifest will cause the automated build and loading of the `sfc` driver. Specifically, the files in [sfc/kmm/](./sfc/kmm/) will configure a `Module` CR with instructions for KMM to build onload's `sfc` in a new container and deploy that to all nodes.
 
-To deploy only to nodes with Solarflare cards (PCIe ID 1924), modify the [Module YAML](./sfc/kmm/sfc-module.yaml) to utilise that NFD-provided node feature:
+To deploy only to nodes with Solarflare cards (PCIe Subsystem Vendor ID: 1924), modify the [Module YAML](./sfc/kmm/sfc-module.yaml) to utilise that NFD-provided node feature:
 
 ```yaml
   selector:
-    feature.node.kubernetes.io/pci-1924.present: true
+    feature.node.kubernetes.io/pci-1924.present: "true"
+```
+
+Given the cluster's `NodeFeatureDiscovery` CR included the `configData` of:
+
+```yaml
+      sources:
+        pci:
+          deviceClassWhitelist:
+            - "1924"
+          deviceLabelFields:
+            - "subsystem_vendor"
 ```
 
 Before you apply the `Module` custom resource for the SFC driver you must
