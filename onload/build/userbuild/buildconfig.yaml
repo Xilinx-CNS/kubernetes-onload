@@ -20,8 +20,8 @@ spec:
       buildArgs:
       - name: ONLOAD_BUILD_PARAMS
         value:
-      - name: ONLOAD_VERSION
-        value: v8.1.0
+      - name: ONLOAD_LOCATION
+        value: (placeholder)
   output:
     to:
       kind: ImageStreamTag

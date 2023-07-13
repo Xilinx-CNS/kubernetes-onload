@@ -8,3 +8,31 @@ resources:
 - ../kmm/
 - ../cplane/
 - ../deviceplugin/
+- ../../base
+
+replacements:
+- source:
+    kind: ConfigMap
+    name: onload-sources-configmap
+    fieldPath: data.ONLOAD_LOCATION
+  targets:
+  - select:
+      kind: BuildConfig
+      name: onload-user
+    fieldPaths:
+    - spec.strategy.dockerStrategy.buildArgs.[name=ONLOAD_LOCATION].value
+  - select:
+      kind: Module
+      name: onload-module
+    fieldPaths:
+    - spec.moduleLoader.container.kernelMappings.0.build.buildArgs.[name=ONLOAD_LOCATION].value
+- source:
+    kind: ConfigMap
+    name: onload-sources-configmap
+    fieldPath: data.KUBERNETES_ONLOAD_LOCATION
+  targets:
+  - select:
+      kind: BuildConfig
+      name: onload-device-plugin
+    fieldPaths:
+    - spec.strategy.dockerStrategy.buildArgs.[name=KUBERNETES_ONLOAD_LOCATION].value

@@ -2,8 +2,12 @@
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 FROM golang:1.20.4 AS builder
 
+ARG KUBERNETES_ONLOAD_LOCATION
+
 WORKDIR /app
-RUN git clone --depth 1 https://github.com/Xilinx-CNS/kubernetes-onload.git
+ADD ${KUBERNETES_ONLOAD_LOCATION} kubernetes-onload.tar.gz
+RUN mkdir -p /app/kubernetes-onload
+RUN tar xzf kubernetes-onload.tar.gz -C /app/kubernetes-onload --strip-components=1
 
 WORKDIR /app/kubernetes-onload/onload/deviceplugin
 RUN go build -o /app/onload-plugin

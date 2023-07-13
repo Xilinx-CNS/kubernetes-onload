@@ -4,6 +4,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - sfc-module.yaml
+- ../../base
+
 namespace: openshift-kmm
 configMapGenerator:
 - name: sfc-module-dockerfile
@@ -11,3 +13,15 @@ configMapGenerator:
   - dockerfile=Dockerfile
 configurations:
 - module-nameref.yaml
+
+replacements:
+- source:
+    kind: ConfigMap
+    name: onload-sources-configmap
+    fieldPath: data.ONLOAD_LOCATION
+  targets:
+  - select:
+      kind: Module
+      name: sfc-module
+    fieldPaths:
+    - spec.moduleLoader.container.kernelMappings.0.build.buildArgs.[name=ONLOAD_LOCATION].value

@@ -17,7 +17,7 @@ spec:
             dockerfileConfigMap:
               name: sfc-module-dockerfile
             buildArgs:
-            - name: ONLOAD_VERSION
-              value: v8.1.0
+            - name: ONLOAD_LOCATION
+              value: (placeholder)
   selector: # top-level selector
     kubernetes.io/arch: amd64

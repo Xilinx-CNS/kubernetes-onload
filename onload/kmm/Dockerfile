@@ -4,11 +4,11 @@ ARG DTK_AUTO
 
 FROM ${DTK_AUTO} as builder
 ARG ONLOAD_BUILD_PARAMS
-ARG ONLOAD_VERSION
+ARG ONLOAD_LOCATION
 ARG KERNEL_VERSION
 
 WORKDIR /build/
-ADD https://github.com/Xilinx-CNS/onload/archive/${ONLOAD_VERSION}.tar.gz onload.tar.gz
+ADD ${ONLOAD_LOCATION} onload.tar.gz
 RUN mkdir -p /build/onload
 RUN tar xzf onload.tar.gz -C /build/onload --strip-components=1
 WORKDIR /build/onload/

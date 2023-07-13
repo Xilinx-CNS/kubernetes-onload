@@ -10,6 +10,17 @@ Expected environment:
   - Node Feature Discovery (NFD) Operator
   - Kernel Module Management (KMM) Operator ([Redhat docs](https://docs.openshift.com/container-platform/4.12/hardware_enablement/kmm-kernel-module-management.html), [codebase docs](https://kmm.sigs.k8s.io/documentation/deploy_kmod/))
 
+#### Build sources
+
+When following the build steps below to build from source in a cluster, ensure
+the source location paths are correct for your environment. The default source
+location paths are [onload](https://github.com/Xilinx-CNS/onload) and this
+repository. This behaviour can be changed by editing
+[onload-sources.conf](base/onload-sources.conf).
+
+The format of the source files must be `*.tar.gz` as the following steps access
+and download them using `ADD` commands in Dockerfiles.
+
 ### SFC out-of-tree driver
 
 This section may be skipped without affecting the other deployment steps, however, the out-of-tree `sfc` driver is currently required when using the provided `onload` driver with a Solarflare card.
