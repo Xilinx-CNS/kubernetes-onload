@@ -45,22 +45,22 @@ below:
 |----------------------------------------------------------------+--------------+------------------------------------------------------------------------------------------------|
 | golang, 1.20.4                                                 | BSD-3-Clause | https://github.com/docker-library/golang/blob/29b2d53bcf3365a9fe72612ae24b884546185be6/LICENSE |
 |----------------------------------------------------------------+--------------+------------------------------------------------------------------------------------------------|
-| github.com/gogo/protobuf, 65acae22fc9d                         | BSD-3-Clause | https://github.com/gogo/protobuf/blob/65acae22fc9d/LICENSE                                     |
+| github.com/gogo/protobuf, 1.3.2                                | BSD-3-Clause | https://github.com/gogo/protobuf/blob/v1.3.2/LICENSE                                           |
 |----------------------------------------------------------------+--------------+------------------------------------------------------------------------------------------------|
-| github.com/golang/glog, 23def4e6c14b                           | Apache-2.0   | https://github.com/golang/glog/blob/23def4e6c14b/LICENSE                                       |
+| github.com/golang/glog, 1.1.1                                  | Apache-2.0   | https://github.com/golang/glog/blob/v1.1.1/LICENSE                                             |
 |----------------------------------------------------------------+--------------+------------------------------------------------------------------------------------------------|
-| github.com/golang/protobuf, 1.3.2                              | BSD-3-Clause | https://github.com/golang/protobuf/blob/v1.3.2/LICENSE                                         |
+| github.com/golang/protobuf, 1.5.3                              | BSD-3-Clause | https://github.com/golang/protobuf/blob/v1.5.3/LICENSE                                         |
 |----------------------------------------------------------------+--------------+------------------------------------------------------------------------------------------------|
-| golang.org/x/net, 13f9640d                                     | BSD-3-Clause | https://cs.opensource.google/go/x/net/+/13f9640d:LICENSE                                       |
+| golang.org/x/net, 0.12.0                                       | BSD-3-Clause | https://cs.opensource.google/go/x/net/+/refs/tags/v0.12.0:LICENSE                              |
 |----------------------------------------------------------------+--------------+------------------------------------------------------------------------------------------------|
-| golang.org/x/sys/unix, c7b8b68b                                | BSD-3-Clause | https://cs.opensource.google/go/x/sys/+/c7b8b68b:LICENSE                                       |
+| golang.org/x/sys/unix, 0.10.0                                  | BSD-3-Clause | https://cs.opensource.google/go/x/sys/+/refs/tags/v0.10.0:LICENSE                              |
 |----------------------------------------------------------------+--------------+------------------------------------------------------------------------------------------------|
-| golang.org/x/text, 0.3.2                                       | BSD-3-Clause | https://cs.opensource.google/go/x/text/+/v0.3.2:LICENSE                                        |
+| golang.org/x/text, 0.11.0                                      | BSD-3-Clause | https://cs.opensource.google/go/x/text/+/refs/tags/v0.11.0:LICENSE                             |
 |----------------------------------------------------------------+--------------+------------------------------------------------------------------------------------------------|
-| google.golang.org/genproto/googleapis/rpc/status, 54afdca5d873 | Apache-2.0   | https://github.com/googleapis/go-genproto/blob/54afdca5d873/LICENSE                            |
+| google.golang.org/genproto/googleapis/rpc/status, e685fd7b542b | Apache-2.0   | https://github.com/googleapis/go-genproto/blob/e685fd7b542b/LICENSE                            |
 |----------------------------------------------------------------+--------------+------------------------------------------------------------------------------------------------|
-| google.golang.org/grpc, 1.23.1                                 | Apache-2.0   | https://github.com/grpc/grpc-go/blob/v1.23.1/LICENSE                                           |
+| google.golang.org/grpc, 1.56.2                                 | Apache-2.0   | https://github.com/grpc/grpc-go/blob/v1.56.2/LICENSE                                           |
 |----------------------------------------------------------------+--------------+------------------------------------------------------------------------------------------------|
-| k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1, 0.17.0           | Apache-2.0   | https://github.com/kubernetes/kubelet/blob/v0.17.0/LICENSE                                     |
+| k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1, 0.27.3           | Apache-2.0   | https://github.com/kubernetes/kubelet/blob/v0.27.3/LICENSE                                     |
 |----------------------------------------------------------------+--------------+------------------------------------------------------------------------------------------------|
 
