@@ -20,10 +20,11 @@ spec:
           namespace: onload-clusterlocal
   source:
     dockerfile: (placeholder)
-
   strategy:
     dockerStrategy:
       buildArgs:
+      - name: KUBERNETES_ONLOAD_LOCATION
+        value: (placeholder)
   output:
     to:
       kind: ImageStreamTag

@@ -1,0 +1,4 @@
+configMapGenerator:
+- name: onload-sources-configmap
+  envs:
+  - onload-sources.conf
