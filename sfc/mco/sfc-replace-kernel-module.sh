@@ -3,10 +3,10 @@
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 
 echo "before checking podman images"
-if podman image exists image-registry.openshift-image-registry.svc:5000/openshift-kmm/sfc-module:git27b3826-$(uname -r); then
+if podman image exists image-registry.openshift-image-registry.svc:5000/openshift-kmm/sfc-module:v8.1.0-$(uname -r); then
     echo "Image sfc-module found in the local registry, removing in-tree kernel module"
 
-    podman run --privileged --entrypoint modprobe image-registry.openshift-image-registry.svc:5000/openshift-kmm/sfc-module:git27b3826-$(uname -r) -rd /opt sfc sfc_driverlink
+    podman run --privileged --entrypoint modprobe image-registry.openshift-image-registry.svc:5000/openshift-kmm/sfc-module:v8.1.0-$(uname -r) -rd /opt sfc sfc_driverlink
     if [ $? -eq 0 ]; then
             echo "Successfully removed the in-tree kernel module sfc.ko"
     else
@@ -14,7 +14,7 @@ if podman image exists image-registry.openshift-image-registry.svc:5000/openshif
     fi
 
     echo "Running container image to insert the oot kernel module sfc.ko"
-    podman run --privileged --entrypoint modprobe image-registry.openshift-image-registry.svc:5000/openshift-kmm/sfc-module:git27b3826-$(uname -r) -d /opt sfc
+    podman run --privileged --entrypoint modprobe image-registry.openshift-image-registry.svc:5000/openshift-kmm/sfc-module:v8.1.0-$(uname -r) -d /opt sfc
     if [ $? -eq 0 ]; then
             echo "OOT kernel module sfc.ko is inserted"
     else

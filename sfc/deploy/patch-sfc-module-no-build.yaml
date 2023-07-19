@@ -12,7 +12,7 @@ spec:
         moduleName: sfc
       kernelMappings:
         - regexp: '^.*\.x86_64$'
-          containerImage: image-registry.openshift-image-registry.svc:5000/openshift-kmm/sfc-module:git27b3826-${KERNEL_FULL_VERSION}
+          containerImage: image-registry.openshift-image-registry.svc:5000/openshift-kmm/sfc-module:v8.1.0-${KERNEL_FULL_VERSION}
           build:
   selector: # top-level selector
     kubernetes.io/arch: amd64

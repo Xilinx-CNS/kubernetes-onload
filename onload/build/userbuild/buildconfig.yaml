@@ -21,9 +21,9 @@ spec:
       - name: ONLOAD_BUILD_PARAMS
         value:
       - name: ONLOAD_VERSION
-        value: 27b38261cfc394012413ee6cbeef8f1ae781489c
+        value: v8.1.0
   output:
     to:
       kind: ImageStreamTag
-      name: onload-user:git27b3826
+      name: onload-user:v8.1.0
       namespace: onload-clusterlocal
