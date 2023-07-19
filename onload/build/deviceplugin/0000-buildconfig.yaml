@@ -16,7 +16,7 @@ spec:
       imageChange:
         from:
           kind: ImageStreamTag
-          name: onload-user:git27b3826
+          name: onload-user:v8.1.0
           namespace: onload-clusterlocal
   source:
     dockerfile: (placeholder)
