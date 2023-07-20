@@ -209,6 +209,22 @@ $ oc get image | grep onload
 ```
 Remove any outstanding manually with `oc delete image`. (Not providing any automated invocation to prevent removal of the false-positive images.)
 
+## Troubleshooting
+
+Onload comes with a troubleshooting container with pre-installed utilities like `onload_stackdump`. Create a privileged debugging container to use these utilities interactively:
+
+```console
+$ oc debug --image-stream=onload-clusterlocal/onload-diagnostics:v8.1.0 node/compute-0
+Temporary namespace openshift-debug-d2ss2 is created for debugging node...
+Starting pod/compute-0-debug ...
+To use host binaries, run `chroot /host`
+Pod IP: 192.168.128.6
+If you don't see a command prompt, try pressing enter.
+sh-4.4# onload_stackdump
+#stack-id stack-name      pids
+0         -               4159878
+```
+
 ## Deploying artifacts into an airgapped cluster
 
 ### Images required
