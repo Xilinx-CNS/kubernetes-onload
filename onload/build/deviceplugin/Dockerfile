@@ -9,7 +9,7 @@ ADD ${KUBERNETES_ONLOAD_LOCATION} kubernetes-onload.tar.gz
 RUN mkdir -p /app/kubernetes-onload
 RUN tar xzf kubernetes-onload.tar.gz -C /app/kubernetes-onload --strip-components=1
 
-WORKDIR /app/kubernetes-onload/onload/deviceplugin
+WORKDIR /app/kubernetes-onload/onload/build/deviceplugin
 RUN go build -o /app/onload-plugin
 
 FROM image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-user:v8.1.0
