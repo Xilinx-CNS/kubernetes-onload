@@ -43,5 +43,5 @@ below:
 |                                  | AND          |                                                                                        |
 |                                  | BSD-2-Clause |                                                                                        |
 |----------------------------------+--------------+----------------------------------------------------------------------------------------|
-| tcpdump, 4.9                     | BSD-3-Clause | https://github.com/the-tcpdump-group/tcpdump/blob/master/LICENSE                       |
+| tcpdump, 4.9                     | BSD-3-Clause | https://github.com/the-tcpdump-group/tcpdump/blob/tcpdump-4.9/LICENSE                  |
 |----------------------------------+--------------+----------------------------------------------------------------------------------------|
