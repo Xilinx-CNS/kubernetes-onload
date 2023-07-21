@@ -22,13 +22,13 @@ spec:
   source:
     dockerfile: |
       FROM registry.redhat.io/ubi8/ubi-init
-      ARG SFNETTEST_VERSION
+      ARG SFNETTEST_LOCATION
 
       RUN dnf install -y git make findutils gcc  # CNS-sfnettest build time
       RUN dnf install -y pciutils                # (Optional) sfnt-pingpong runtime
 
       WORKDIR /build/
-      ADD https://github.com/Xilinx-CNS/cns-sfnettest/archive/refs/tags/${SFNETTEST_VERSION}.tar.gz cns-sfnettest.tar.gz
+      ADD ${SFNETTEST_LOCATION} cns-sfnettest.tar.gz
       RUN mkdir -p /build/cns-sfnettest
       RUN tar xzf cns-sfnettest.tar.gz -C /build/cns-sfnettest --strip-components=1
 
@@ -40,8 +40,8 @@ spec:
   strategy:
     dockerStrategy:
       buildArgs:
-      - name: SFNETTEST_VERSION
-        value: "sfnettest-1.6.0-rc1"
+      - name: SFNETTEST_LOCATION
+        value: (placeholder)
   output:
     to:
       kind: ImageStreamTag
