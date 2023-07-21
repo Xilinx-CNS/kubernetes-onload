@@ -39,7 +39,7 @@ below:
 | Red Hat Universal Basic Image, 8 | UBI EULA     | https://www.redhat.com/licenses/EULA_Red_Hat_Universal_Base_Image_English_20190422.pdf |
 |                                  | + Various    |                                                                                        |
 |----------------------------------+--------------+----------------------------------------------------------------------------------------|
-| AMD Onload, 8.1                  | GPL-2.0-only | https://github.com/Xilinx-CNS/onload/blob/master/src/onload/distfiles/LICENSE          |
+| AMD Onload, 8.1                  | GPL-2.0-only | https://github.com/Xilinx-CNS/onload/blob/v8.1.0/src/onload/distfiles/LICENSE          |
 |                                  | AND          |                                                                                        |
 |                                  | BSD-2-Clause |                                                                                        |
 |----------------------------------+--------------+----------------------------------------------------------------------------------------|
