@@ -39,5 +39,5 @@ below:
 | Red Hat Universal Basic Image, 8 | UBI EULA     | https://www.redhat.com/licenses/EULA_Red_Hat_Universal_Base_Image_English_20190422.pdf |
 |                                  | + Various    |                                                                                        |
 |----------------------------------+--------------+----------------------------------------------------------------------------------------|
-| AMD sfnettest, 1.5               | GPL-2.0-only | https://github.com/Xilinx-CNS/cns-sfnettest/blob/master/LICENSE                        |
+| AMD sfnettest, 1.6.0-rc1         | GPL-2.0-only | https://github.com/Xilinx-CNS/cns-sfnettest/blob/sfnettest-1.6.0-rc1/LICENSE           |
 |----------------------------------+--------------+----------------------------------------------------------------------------------------|
