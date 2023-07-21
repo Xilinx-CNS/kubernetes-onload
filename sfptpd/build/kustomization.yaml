@@ -4,3 +4,16 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - sfptpd-build.yaml
+- ../../base
+
+replacements:
+- source:
+    kind: ConfigMap
+    name: onload-sources-configmap
+    fieldPath: data.SFPTPD_LOCATION
+  targets:
+  - select:
+      kind: BuildConfig
+      name: sfptpd-builder
+    fieldPaths:
+    - spec.strategy.dockerStrategy.buildArgs.[name=SFPTPD_LOCATION].value
