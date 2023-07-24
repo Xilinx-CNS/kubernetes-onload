@@ -36,3 +36,4 @@ Thumbs.db
 .gdb_history
 *.tar
 *.tar.gz
+!modules.txt
