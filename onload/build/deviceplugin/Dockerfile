@@ -10,7 +10,10 @@ RUN mkdir -p /app/kubernetes-onload
 RUN tar xzf kubernetes-onload.tar.gz -C /app/kubernetes-onload --strip-components=1
 
 WORKDIR /app/kubernetes-onload/onload/build/deviceplugin
-RUN go build -o /app/onload-plugin
+# Module vendoring is ignored in workspace mode, so to build the
+# onload-device-plugin using vendored dependencies we have to temporarily
+# disable workspace mode.
+RUN GOWORK=off go build -mod=vendor -o /app/onload-plugin
 
 FROM image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-user:v8.1.0
 RUN microdnf install lshw
