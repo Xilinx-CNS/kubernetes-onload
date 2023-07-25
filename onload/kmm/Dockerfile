@@ -16,7 +16,7 @@ WORKDIR /build/onload/
 RUN scripts/onload_build --kernel --kernelver ${KERNEL_VERSION} ${ONLOAD_BUILD_PARAMS}
 RUN scripts/onload_install --nobuild --kernelfiles --kernelver ${KERNEL_VERSION}
 
-FROM docker.io/redhat/ubi8:latest
+FROM ubi8:8.8
 ARG KERNEL_VERSION
 
 RUN yum -y install kmod && yum clean all

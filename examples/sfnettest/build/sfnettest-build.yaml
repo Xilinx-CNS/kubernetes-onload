@@ -21,7 +21,7 @@ spec:
     - type: "ImageChange"
   source:
     dockerfile: |
-      FROM registry.redhat.io/ubi8/ubi-init
+      FROM ubi8-init:8.8
       ARG SFNETTEST_LOCATION
 
       RUN dnf install -y git make findutils gcc  # CNS-sfnettest build time

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
-FROM registry.redhat.io/ubi8/ubi-minimal as builder
+FROM ubi8-minimal:8.8 as builder
 ARG ONLOAD_BUILD_PARAMS
 ARG ONLOAD_LOCATION
 
@@ -50,7 +50,7 @@ ENV i_prefix=/opt/onload
 RUN scripts/onload_install --nobuild --userfiles
 
 # Prepare a minimal image with onload userland
-FROM registry.redhat.io/ubi8/ubi-minimal
+FROM ubi8-minimal:8.8
 
 COPY --from=builder /opt/onload /opt/onload
 

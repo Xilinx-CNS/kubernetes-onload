@@ -26,7 +26,7 @@ WORKDIR /build/onload/
 # this with onload's build scripts, so the driver's Makefile is used directly.
 RUN make -j8 -C src/driver/linux_net CONFIG_SFC_VDPA= CONFIG_SFC_MTD= KVER=${KERNEL_VERSION}
 
-FROM docker.io/redhat/ubi8:latest
+FROM ubi8:8.8
 ARG KERNEL_VERSION
 
 RUN yum -y install kmod && yum clean all
