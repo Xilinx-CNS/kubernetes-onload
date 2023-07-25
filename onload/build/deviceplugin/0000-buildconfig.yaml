@@ -25,6 +25,8 @@ spec:
       buildArgs:
       - name: KUBERNETES_ONLOAD_LOCATION
         value: (placeholder)
+      - name: GOLANG_IMAGE
+        value: (placeholder)
   output:
     to:
       kind: ImageStreamTag

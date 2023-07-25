@@ -33,13 +33,16 @@ spec:
       buildArgs:
       - name: SFPTPD_LOCATION
         value: (placeholder)
+      - name: UBI9_MINIMAL_IMAGE
+        value: (placeholder)
   output:
     to:
       kind: ImageStreamTag
       name: sfptpd:git-ab881b3
   source:
     dockerfile: |
-      FROM registry.access.redhat.com/ubi9/ubi-minimal AS build
+      ARG UBI9_MINIMAL_IMAGE
+      FROM ${UBI9_MINIMAL_IMAGE} AS build
       WORKDIR src
       RUN microdnf -y install make gcc tar bzip2 redhat-rpm-config
       RUN microdnf -y --enablerepo=ubi-9-baseos-source download --source libmnl libcap
@@ -64,7 +67,7 @@ spec:
        INST_INITS="" \
        make -C sfptpd -j 10 install
 
-      FROM registry.access.redhat.com/ubi9/ubi-minimal AS runtime
+      FROM ${UBI9_MINIMAL_IMAGE} AS runtime
       RUN microdnf -y install libmnl
       COPY --from=build /staged /
       WORKDIR /var/lib/sfptpd

@@ -17,3 +17,13 @@ replacements:
       name: onload-sfnettest
     fieldPaths:
     - spec.strategy.dockerStrategy.buildArgs.[name=SFNETTEST_LOCATION].value
+- source:
+    kind: ConfigMap
+    name: onload-sources-configmap
+    fieldPath: data.UBI8_INIT_IMAGE
+  targets:
+  - select:
+      kind: BuildConfig
+      name: onload-sfnettest
+    fieldPaths:
+    - spec.strategy.dockerStrategy.buildArgs.[name=UBI8_INIT_IMAGE].value

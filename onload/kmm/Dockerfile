@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 ARG DTK_AUTO
+ARG DTK_IMAGE
+ARG UBI8_IMAGE
 
-FROM ${DTK_AUTO} as builder
+FROM ${DTK_IMAGE:-${DTK_AUTO}} as builder
 ARG ONLOAD_BUILD_PARAMS
 ARG ONLOAD_LOCATION
 ARG KERNEL_VERSION
@@ -16,7 +18,7 @@ WORKDIR /build/onload/
 RUN scripts/onload_build --kernel --kernelver ${KERNEL_VERSION} ${ONLOAD_BUILD_PARAMS}
 RUN scripts/onload_install --nobuild --kernelfiles --kernelver ${KERNEL_VERSION}
 
-FROM docker.io/redhat/ubi8:latest
+FROM ${UBI8_IMAGE}
 ARG KERNEL_VERSION
 
 RUN yum -y install kmod && yum clean all

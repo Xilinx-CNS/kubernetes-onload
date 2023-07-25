@@ -25,3 +25,23 @@ replacements:
       name: sfc-module
     fieldPaths:
     - spec.moduleLoader.container.kernelMappings.0.build.buildArgs.[name=ONLOAD_LOCATION].value
+- source:
+    kind: ConfigMap
+    name: onload-sources-configmap
+    fieldPath: data.UBI8_IMAGE
+  targets:
+  - select:
+      kind: Module
+      name: sfc-module
+    fieldPaths:
+    - spec.moduleLoader.container.kernelMappings.0.build.buildArgs.[name=UBI8_IMAGE].value
+- source:
+    kind: ConfigMap
+    name: onload-sources-configmap
+    fieldPath: data.DTK_IMAGE
+  targets:
+  - select:
+      kind: Module
+      name: sfc-module
+    fieldPaths:
+    - spec.moduleLoader.container.kernelMappings.0.build.buildArgs.[name=DTK_IMAGE].value

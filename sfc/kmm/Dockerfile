@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 ARG DTK_AUTO
-FROM ${DTK_AUTO} as builder
+ARG DTK_IMAGE
+ARG UBI8_IMAGE
+
+FROM ${DTK_IMAGE:-${DTK_AUTO}} as builder
 
 ARG KERNEL_VERSION
 ARG ONLOAD_LOCATION
@@ -26,7 +29,7 @@ WORKDIR /build/onload/
 # this with onload's build scripts, so the driver's Makefile is used directly.
 RUN make -j8 -C src/driver/linux_net CONFIG_SFC_VDPA= CONFIG_SFC_MTD= KVER=${KERNEL_VERSION}
 
-FROM docker.io/redhat/ubi8:latest
+FROM ${UBI8_IMAGE}
 ARG KERNEL_VERSION
 
 RUN yum -y install kmod && yum clean all

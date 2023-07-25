@@ -17,3 +17,13 @@ replacements:
       name: sfptpd-builder
     fieldPaths:
     - spec.strategy.dockerStrategy.buildArgs.[name=SFPTPD_LOCATION].value
+- source:
+    kind: ConfigMap
+    name: onload-sources-configmap
+    fieldPath: data.UBI9_MINIMAL_IMAGE
+  targets:
+  - select:
+      kind: BuildConfig
+      name: sfptpd-builder
+    fieldPaths:
+    - spec.strategy.dockerStrategy.buildArgs.[name=UBI9_MINIMAL_IMAGE].value

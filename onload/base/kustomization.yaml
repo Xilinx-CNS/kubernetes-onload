@@ -36,3 +36,52 @@ replacements:
       name: onload-device-plugin
     fieldPaths:
     - spec.strategy.dockerStrategy.buildArgs.[name=KUBERNETES_ONLOAD_LOCATION].value
+
+- source:
+    kind: ConfigMap
+    name: onload-sources-configmap
+    fieldPath: data.UBI8_MINIMAL_IMAGE
+  targets:
+  - select:
+      kind: BuildConfig
+      name: onload-user
+    fieldPaths:
+    - spec.strategy.dockerStrategy.buildArgs.[name=UBI8_MINIMAL_IMAGE].value
+
+- source:
+    kind: ConfigMap
+    name: onload-sources-configmap
+    fieldPath: data.UBI8_IMAGE
+  targets:
+  - select:
+      kind: BuildConfig
+      name: onload-diagnostics
+    fieldPaths:
+    - spec.strategy.dockerStrategy.buildArgs.[name=UBI8_IMAGE].value
+  - select:
+      kind: Module
+      name: onload-module
+    fieldPaths:
+    - spec.moduleLoader.container.kernelMappings.0.build.buildArgs.[name=UBI8_IMAGE].value
+
+- source:
+    kind: ConfigMap
+    name: onload-sources-configmap
+    fieldPath: data.GOLANG_IMAGE
+  targets:
+  - select:
+      kind: BuildConfig
+      name: onload-device-plugin
+    fieldPaths:
+    - spec.strategy.dockerStrategy.buildArgs.[name=GOLANG_IMAGE].value
+
+- source:
+    kind: ConfigMap
+    name: onload-sources-configmap
+    fieldPath: data.DTK_IMAGE
+  targets:
+  - select:
+      kind: Module
+      name: onload-module
+    fieldPaths:
+    - spec.moduleLoader.container.kernelMappings.0.build.buildArgs.[name=DTK_IMAGE].value

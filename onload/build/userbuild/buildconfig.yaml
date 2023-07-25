@@ -22,6 +22,8 @@ spec:
         value:
       - name: ONLOAD_LOCATION
         value: (placeholder)
+      - name: UBI8_MINIMAL_IMAGE
+        value: (placeholder)
   output:
     to:
       kind: ImageStreamTag

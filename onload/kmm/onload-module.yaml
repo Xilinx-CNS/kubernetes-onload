@@ -54,5 +54,9 @@ spec:
               value: ""
             - name: ONLOAD_LOCATION
               value: (placeholder)
+            - name: DTK_IMAGE
+              value: (placeholder)
+            - name: UBI8_IMAGE
+              value: (placeholder)
   selector: # top-level selector
     kubernetes.io/arch: amd64

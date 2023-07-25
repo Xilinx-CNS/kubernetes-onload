@@ -21,6 +21,21 @@ repository. This behaviour can be changed by editing
 The format of the source files must be `*.tar.gz` as the following steps access
 and download them using `ADD` commands in Dockerfiles.
 
+#### Base Images
+
+The following are the base images used for in-cluster builds:
+
+* ubi8
+* ubi8-minimal
+* ubi8-init
+* ubi9-minimal
+* golang:1.20.4
+* `DTK_AUTO` with the value provided by the KMM operator.
+
+By default these images will be pulled from internet registries (quay.io,
+docker.io, registry.access.redhat.com). If you wish to configure the locations
+of these images, then they can be changed by editing [onload-sources.conf](base/onload-sources.conf).
+
 ### SFC out-of-tree driver
 
 This section may be skipped without affecting the other deployment steps, however, the out-of-tree `sfc` driver is currently required when using the provided `onload` driver with a Solarflare card.

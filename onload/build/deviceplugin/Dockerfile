@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
-FROM golang:1.20.4 AS builder
+ARG GOLANG_IMAGE
+
+FROM ${GOLANG_IMAGE} AS builder
 
 ARG KUBERNETES_ONLOAD_LOCATION
 

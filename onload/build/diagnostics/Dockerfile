@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+ARG UBI8_IMAGE
+
 FROM image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-user:v8.1.0 AS onload-user
 
-FROM ubi8
+FROM ${UBI8_IMAGE}
 
 RUN dnf install -y libpcap procps-ng util-linux iptables python3
 

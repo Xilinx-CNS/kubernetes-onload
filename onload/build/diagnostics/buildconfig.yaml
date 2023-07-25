@@ -24,6 +24,8 @@ spec:
   strategy:
     dockerStrategy:
       buildArgs:
+      - name: UBI8_IMAGE
+        value: (placeholder)
   output:
     to:
       kind: ImageStreamTag
