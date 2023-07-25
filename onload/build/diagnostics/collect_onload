@@ -1,0 +1,27 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+
+declare -r BASE_COLLECTION_PATH="/must-gather"
+
+
+collect_onload_stackdump() {
+  declare -r command=$1
+
+  echo "Running onload_stackdump ${command}"
+  onload_stackdump "${command}" |& tee -a "${BASE_COLLECTION_PATH}/${command}.log"
+}
+
+
+collect_onload() {
+  echo Collecting Onload diagnostics data
+
+  mkdir -p "${BASE_COLLECTION_PATH}"
+
+  collect_onload_stackdump lots
+  collect_onload_stackdump filters
+  collect_onload_stackdump filter_table
+}
+
+
+collect_onload

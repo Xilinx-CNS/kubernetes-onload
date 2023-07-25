@@ -7,9 +7,6 @@ metadata:
     app: onload-diagnostics
   name: onload-diagnostics
 spec:
-  nodeSelector:
-    node-role.kubernetes.io/worker: ""
-  runPolicy: Serial
   triggers:
     - type: ConfigChange
     - type: ImageChange
@@ -20,7 +17,9 @@ spec:
           namespace: onload-clusterlocal
   source:
     dockerfile: (placeholder)
-
+    configMaps:
+      - configMap:
+          name: onload-diagnostics-scripts
   strategy:
     dockerStrategy:
       buildArgs:
@@ -28,4 +27,27 @@ spec:
     to:
       kind: ImageStreamTag
       name: onload-diagnostics:v8.1.0
+      namespace: onload-clusterlocal
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: onload-diagnostics
+  name: onload-must-gather
+spec:
+  triggers:
+    - type: ConfigChange
+  source:
+    dockerfile: (placeholder)
+    configMaps:
+      - configMap:
+          name: onload-must-gather-scripts
+  strategy:
+    dockerStrategy:
+      buildArgs:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: onload-must-gather:v8.1.0
       namespace: onload-clusterlocal

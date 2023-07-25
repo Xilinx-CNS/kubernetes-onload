@@ -4,6 +4,9 @@ FROM image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload
 
 FROM ubi8:8.8
 
+COPY collect_onload /usr/bin/
+RUN chmod ugo+rx /usr/bin/collect_onload
+
 RUN dnf install -y libpcap procps-ng util-linux iptables python3
 
 # Best effort to install tcpdump for onload_tcpdump.
