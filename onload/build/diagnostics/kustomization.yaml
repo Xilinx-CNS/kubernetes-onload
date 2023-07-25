@@ -9,6 +9,16 @@ configMapGenerator:
 - name: onload-diagnostics-dockerfile
   files:
   - dockerfile=Dockerfile
+- name: onload-diagnostics-scripts
+  files:
+  - collect_onload
+
+- name: onload-must-gather-dockerfile
+  files:
+  - dockerfile=must-gather/Dockerfile
+- name: onload-must-gather-scripts
+  files:
+  - must-gather/gather_onload
 
 replacements:
 - source:
@@ -21,3 +31,17 @@ replacements:
       name: onload-diagnostics
     fieldPaths:
     - spec.source.dockerfile
+
+- source:
+    kind: ConfigMap
+    name: onload-must-gather-dockerfile
+    fieldPath: data.dockerfile
+  targets:
+  - select:
+      kind: BuildConfig
+      name: onload-must-gather
+    fieldPaths:
+    - spec.source.dockerfile
+
+configurations:
+- buildconfig-nameref.yaml

@@ -1,0 +1,97 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+
+declare -r BASE_COLLECTION_PATH="/must-gather"
+declare COLLECTION_PATH="${BASE_COLLECTION_PATH}"
+
+declare -r NAMESPACE="onload-runtime"
+declare -r IMAGE_STREAM="onload-clusterlocal/onload-diagnostics:v8.1.0"
+declare -r NODE_SELECTOR="node-role.kubernetes.io/worker"
+
+declare -r USAGE="Onload must-gather script for OpenShift clusters
+
+Run as a standalone script with the --collection-path option
+to override the default output directory:
+
+  $ ./gather_onload --collection-path onload-bundle
+
+Run with must-gather, optionally with the --dest-dir option
+to override the default directory ./must-gather.local:
+
+  $ oc adm must-gather --image-stream=onload-clusterlocal/onload-must-gather:v8.1.0 -- gather_onload
+
+Options:
+
+  --collection-path  Output directory with the collected logs (default=${BASE_COLLECTION_PATH})
+  -h|--help          Print this message
+"
+
+
+gather_onload_off_node() {
+  local -r node="$1"
+
+  # Get the debug pod's name without starting it.
+  local -r debug_pod=$(oc debug --to-namespace="${NAMESPACE}" \
+                                --image-stream="${IMAGE_STREAM}" \
+                                --output jsonpath='{.metadata.name}' \
+                                node/"${node}")
+  if [[ -z "$debug_pod" ]]
+  then
+    echo "Unable to obtain a debug pod for node ${node}"
+  fi
+
+  # Spin up the pod.
+  oc debug --to-namespace="${NAMESPACE}" --image-stream="${IMAGE_STREAM}" node/"${node}" \
+    -- sleep 300 > /dev/null 2>&1 &
+
+  # Allow the pod to register.
+  sleep 2
+  oc wait -n "${NAMESPACE}" --for=condition=Ready pod/"$debug_pod" --timeout=30s
+
+  # Collect Onload diagnostics.
+  oc rsh -n "${NAMESPACE}" "${debug_pod}" collect_onload
+
+  # Copy the files across.
+  mkdir -p "${COLLECTION_PATH}/${node}"
+  oc rsync -n "${NAMESPACE}" \
+    "${debug_pod}:${BASE_COLLECTION_PATH}"/ \
+    "${COLLECTION_PATH}/${node}"
+
+  # Terminate the debugging pod.
+  oc delete pod -n "${NAMESPACE}" "${debug_pod}"
+}
+
+
+gather_onload() {
+  local -r nodes="$(oc get nodes --selector=${NODE_SELECTOR} -o jsonpath='{.items[*].metadata.name}')"
+
+  for node in ${nodes}
+  do
+    gather_onload_off_node "${node}"
+  done
+}
+
+
+while [[ $# -gt 0 ]]
+do
+  case $1 in
+    --collection-path)
+      COLLECTION_PATH="$2"
+      shift
+      shift
+      ;;
+    -h|--help)
+      echo "${USAGE}"
+      exit
+      ;;
+    *)
+      echo "Unknown command line option: $1"
+      echo "${USAGE}"
+      exit
+      ;;
+  esac
+done
+
+
+gather_onload

@@ -46,3 +46,10 @@ metadata:
   name: onload-diagnostics
   namespace: onload-clusterlocal
 spec: {}
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: onload-must-gather
+  namespace: onload-clusterlocal
+spec: {}

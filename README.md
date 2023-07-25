@@ -19,6 +19,7 @@ hosts with `docker pull <image>` and OCP Internet-connected clusters.
 For Onload & SFC:
 * ubi8:8.8
 * ubi8-minimal:8.8
+* openshift4/ose-cli:v4.12.0
 * golang:1.20.4
 * `DTK_AUTO`
 
@@ -240,7 +241,11 @@ Remove any outstanding manually with `oc delete image`. (Not providing any autom
 
 ## Troubleshooting
 
-Onload comes with a troubleshooting container with pre-installed utilities like `onload_stackdump`. Create a privileged debugging container to use these utilities interactively:
+The Onload Diagnostics container image includes tools such as `onload_stackdump`. This troubleshooting container is suitable for interactive and automated use.
+
+### Interactive
+
+Create a privileged debugging container to run Onload troubleshooting tools interactively:
 
 ```console
 $ oc debug --image-stream=onload-clusterlocal/onload-diagnostics:v8.1.0 node/compute-0
@@ -253,6 +258,18 @@ sh-4.4# onload_stackdump
 #stack-id stack-name      pids
 0         -               4159878
 ```
+
+### Automated
+
+#### OpenShift
+
+Collect a log bundle via the OpenShift `must-gather` tool:
+
+```console
+$ oc adm must-gather --image-stream=onload-clusterlocal/onload-must-gather:v8.1.0 -- gather_onload
+```
+
+By default, the `oc adm must-gather` command writes into `./must-gather.local`.
 
 ## Deploying artifacts into an airgapped cluster
 
