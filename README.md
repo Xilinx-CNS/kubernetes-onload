@@ -12,6 +12,10 @@ Expected environment:
 
 #### Base images required
 
+The following images are all available from `registry.access.redhat.com`,
+`registry.redhat.io`, or `docker.io`, so will typically be available on RHEL
+hosts with `docker pull <image>` and OCP Internet-connected clusters.
+
 For Onload & SFC:
 * ubi8:8.8
 * ubi8-minimal:8.8
@@ -21,17 +25,18 @@ For Onload & SFC:
 The `DTK_AUTO` image is determined by the KMM Operator depending on the kernel
 versions of the nodes in your cluster. To get the location of this image you
 can run:
+
 ```console
 $ oc adm release info $OCP_VERSION --image-for=driver-toolkit
 ```
-Where `$OCP_VERSION` is the version of the Openshift cluster on which you will
+Where `$OCP_VERSION` is the version of the OpenShift cluster on which you will
 deploy Onload.
 
 
-For Sfptpd:
+For sfptpd:
 * ubi9-minimal:9.2
 
-For Sfnettest example pod:
+For sfnettest example pod:
 * ubi8-init:8.8
 
 #### Build sources
