@@ -10,6 +10,30 @@ Expected environment:
   - Node Feature Discovery (NFD) Operator
   - Kernel Module Management (KMM) Operator ([Redhat docs](https://docs.openshift.com/container-platform/4.12/hardware_enablement/kmm-kernel-module-management.html), [codebase docs](https://kmm.sigs.k8s.io/documentation/deploy_kmod/))
 
+#### Base images required
+
+For Onload & SFC:
+* ubi8:8.8
+* ubi8-minimal:8.8
+* golang:1.20.4
+* `DTK_AUTO`
+
+The `DTK_AUTO` image is determined by the KMM Operator depending on the kernel
+versions of the nodes in your cluster. To get the location of this image you
+can run:
+```console
+$ oc adm release info $OCP_VERSION --image-for=driver-toolkit
+```
+Where `$OCP_VERSION` is the version of the Openshift cluster on which you will
+deploy Onload.
+
+
+For Sfptpd:
+* ubi9-minimal:9.2
+
+For Sfnettest example pod:
+* ubi8-init:8.8
+
 #### Build sources
 
 When following the build steps below to build from source in a cluster, ensure
