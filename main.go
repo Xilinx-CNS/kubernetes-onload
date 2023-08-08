@@ -1,6 +1,5 @@
-/*
-Copyright 2023.
-*/
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 
 package main
 
