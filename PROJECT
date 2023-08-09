@@ -10,4 +10,14 @@ plugins:
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: onload-operator
 repo: github.com/Xilinx-CNS/kubernetes-onload
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: amd.com
+  group: onload
+  kind: Onload
+  path: github.com/Xilinx-CNS/kubernetes-onload/api/v1alpha1
+  version: v1alpha1
 version: "3"
