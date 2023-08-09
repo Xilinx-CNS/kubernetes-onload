@@ -1,0 +1,27 @@
+# permissions for end users to view onloads.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: onload-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: onload-operator
+    app.kubernetes.io/part-of: onload-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: onload-viewer-role
+rules:
+- apiGroups:
+  - onload.amd.com
+  resources:
+  - onloads
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - onload.amd.com
+  resources:
+  - onloads/status
+  verbs:
+  - get

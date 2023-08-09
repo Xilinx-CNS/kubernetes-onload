@@ -1,0 +1,12 @@
+apiVersion: onload.amd.com/v1alpha1
+kind: Onload
+metadata:
+  labels:
+    app.kubernetes.io/name: onload
+    app.kubernetes.io/instance: onload-sample
+    app.kubernetes.io/part-of: onload-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: onload-operator
+  name: onload-sample
+spec:
+  # TODO(user): Add fields here
