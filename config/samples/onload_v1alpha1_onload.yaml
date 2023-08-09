@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 apiVersion: onload.amd.com/v1alpha1
 kind: Onload
 metadata:

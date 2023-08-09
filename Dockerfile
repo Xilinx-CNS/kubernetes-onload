@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+
 # Build the manager binary
 FROM golang:1.19 as builder
 ARG TARGETOS

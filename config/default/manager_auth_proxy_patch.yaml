@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 # This patch inject a sidecar container which is a HTTP proxy for the
 # controller manager, it performs RBAC authorization against the Kubernetes API using SubjectAccessReviews.
 apiVersion: apps/v1
