@@ -76,7 +76,4 @@ make manifests
 
 More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
 
-## License
-
-Copyright 2023.
-
+Copyright (c) 2023 Advanced Micro Devices, Inc.

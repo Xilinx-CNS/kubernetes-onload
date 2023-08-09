@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 # The following patch adds a directive for certmanager to inject CA into the CRD
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition

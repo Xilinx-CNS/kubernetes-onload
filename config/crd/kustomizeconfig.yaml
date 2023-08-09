@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 # This file is for teaching kustomize how to substitute name and namespace reference in CRD
 nameReference:
 - kind: Service

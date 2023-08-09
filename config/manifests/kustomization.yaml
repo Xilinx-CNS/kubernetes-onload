@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 # These resources constitute the fully configured set of manifests
 # used to generate the 'manifests/' directory in a bundle.
 resources:
