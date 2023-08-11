@@ -11,4 +11,16 @@ metadata:
     app.kubernetes.io/created-by: onload-operator
   name: onload-sample
 spec:
-  foo: bar
+  selector:
+    node-role.kubernetes.io/worker: ""
+  onload:
+    # Example image locations using openshift local image registry.
+    kernelMappings:
+      - regexp: '^.*\.x86_64$'
+        kernelModuleImage: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-module:v8.1.0-${KERNEL_FULL_VERSION}
+    userImage: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-user:v8.1.0
+    version: 8.1.0
+    imagePullPolicy: Always
+  devicePlugin:
+    devicePluginImage: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-device-plugin:latest
+    imagePullPolicy: Always

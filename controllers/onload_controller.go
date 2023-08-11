@@ -57,9 +57,9 @@ func (r *OnloadReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	isOnloadMarkedToBeDeleted := onload.GetDeletionTimestamp() != nil
 
 	if !isOnloadMarkedToBeDeleted {
-		log.Info("Adding new Onload kind", "foo", onload.Spec.Foo)
+		log.Info("Adding new Onload kind")
 	} else {
-		log.Info("Deleting new Onload kind", "foo", onload.Spec.Foo)
+		log.Info("Deleting new Onload kind")
 	}
 
 	return ctrl.Result{}, nil

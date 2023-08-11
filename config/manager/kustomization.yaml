@@ -2,3 +2,9 @@
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 resources:
 - manager.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: controller
+  newName: image-registry.openshift-image-registry.svc:5000/onload-operator-system/controller
+  newTag: latest
