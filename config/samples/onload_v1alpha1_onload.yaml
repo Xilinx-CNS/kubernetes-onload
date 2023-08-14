@@ -1,5 +1,36 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: onload-operator-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: onload-operator-role
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+  resourceNames:
+  - privileged
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: onload-operator-rb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: onload-operator-role
+subjects:
+- kind: ServiceAccount
+  name: onload-operator-sa
+---
 apiVersion: onload.amd.com/v1alpha1
 kind: Onload
 metadata:
@@ -11,6 +42,7 @@ metadata:
     app.kubernetes.io/created-by: onload-operator
   name: onload-sample
 spec:
+  serviceAccountName: onload-operator-sa
   selector:
     node-role.kubernetes.io/worker: ""
   onload:

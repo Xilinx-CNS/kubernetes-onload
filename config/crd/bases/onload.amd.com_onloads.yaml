@@ -115,10 +115,15 @@ spec:
                 description: Selector defines the set of nodes that this onload CR
                   will run on.
                 type: object
+              serviceAccountName:
+                description: ServiceAccountName is the name of the service account
+                  that the objects created by the onload operator will use.
+                type: string
             required:
             - devicePlugin
             - onload
             - selector
+            - serviceAccountName
             type: object
           status:
             description: Status contains the statuses for onload and related products

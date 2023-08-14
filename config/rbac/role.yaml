@@ -7,9 +7,9 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - onload.amd.com
+  - kmm.sigs.x-k8s.io
   resources:
-  - onloads
+  - modules
   verbs:
   - create
   - delete
@@ -21,9 +21,15 @@ rules:
 - apiGroups:
   - onload.amd.com
   resources:
-  - onloads/finalizers
+  - onloads
   verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
   - update
+  - watch
 - apiGroups:
   - onload.amd.com
   resources:
