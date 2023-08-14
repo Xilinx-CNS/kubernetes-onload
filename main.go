@@ -20,7 +20,10 @@ import (
 
 	onloadv1alpha1 "github.com/Xilinx-CNS/kubernetes-onload/api/v1alpha1"
 	"github.com/Xilinx-CNS/kubernetes-onload/controllers"
+
 	//+kubebuilder:scaffold:imports
+
+	kmm "github.com/kubernetes-sigs/kernel-module-management/api/v1beta1"
 )
 
 var (
@@ -32,6 +35,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(onloadv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(kmm.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

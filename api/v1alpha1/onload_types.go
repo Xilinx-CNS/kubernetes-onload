@@ -95,6 +95,10 @@ type Spec struct {
 
 	// Selector defines the set of nodes that this onload CR will run on.
 	Selector map[string]string `json:"selector"`
+
+	// ServiceAccountName is the name of the service account that the objects
+	// created by the onload operator will use.
+	ServiceAccountName string `json:"serviceAccountName"`
 }
 
 // OnloadStatus defines the observed state of Onload
