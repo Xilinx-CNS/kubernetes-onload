@@ -1,0 +1,49 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: onload-operator.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Onload is the Schema for the onloads API
+      displayName: Onload
+      kind: Onload
+      name: onloads.onload.amd.com
+      statusDescriptors:
+      - description: Conditions store the status conditions of Onload
+        displayName: Conditions
+        path: conditions
+      version: v1alpha1
+  description: manages onload deployments in a cluster
+  displayName: onload-operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - onload
+  links:
+  - name: Onload Operator
+    url: https://github.com/Xilinx-CNS/kubernetes-onload
+  maturity: alpha
+  provider:
+    name: AMD
+    url: https://github.com/Xilinx-CNS/kubernetes-onload
+  version: 0.0.0
