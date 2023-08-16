@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -93,7 +94,9 @@ var _ = Describe("onload controller", func() {
 					Namespace: namespaceName,
 				},
 				Spec: onloadv1alpha1.Spec{
-					Selector: map[string]string{"": ""},
+					Selector: map[string]string{
+						"key": "",
+					},
 					Onload: onloadv1alpha1.OnloadSpec{
 						KernelMappings: []onloadv1alpha1.OnloadKernelMapping{
 							{
@@ -101,7 +104,7 @@ var _ = Describe("onload controller", func() {
 								Regexp:            "",
 							},
 						},
-						UserImage: "",
+						UserImage: "image:tag",
 						Version:   "",
 					},
 					DevicePlugin: onloadv1alpha1.DevicePluginSpec{
@@ -144,6 +147,30 @@ var _ = Describe("onload controller", func() {
 
 			By("checking the owner references of the module")
 			Expect(createdModule.ObjectMeta.OwnerReferences).
+				To(ContainElement(MatchFields(IgnoreExtras, Fields{
+					"Name": Equal(onload.Name),
+					"UID":  Equal(onload.UID),
+				})))
+		})
+
+		It("should create the control plane daemon set", func() {
+			createdControlPlane := appsv1.DaemonSet{}
+			controlPlaneName := types.NamespacedName{
+				Name:      onload.Name + "-onload-cplane-ds",
+				Namespace: onload.Namespace,
+			}
+
+			By("creating an onload CR")
+			Expect(k8sClient.Create(ctx, onload)).To(BeNil())
+
+			By("checking for the existence of the control plane daemon set")
+			Eventually(func() error {
+				return k8sClient.Get(ctx, controlPlaneName,
+					&createdControlPlane)
+			}, timeout, pollingInterval).Should(BeNil())
+
+			By("checking the owner references of the module")
+			Expect(createdControlPlane.ObjectMeta.OwnerReferences).
 				To(ContainElement(MatchFields(IgnoreExtras, Fields{
 					"Name": Equal(onload.Name),
 					"UID":  Equal(onload.UID),
