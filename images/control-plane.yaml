@@ -1,0 +1,127 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: onload-control-plane
+spec: {}
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: onload-control-plane
+spec:
+  runPolicy: "Serial"
+  triggers:
+    - type: "ConfigChange"
+  source:
+    dockerfile: |
+      # Supply of onload_cp_server
+      FROM image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-user:v8.1.0 AS onload-user
+
+      # Runtime with kubectl & jq
+      FROM alpine/k8s:1.25.12
+
+      COPY --from=onload-user /opt/onload/sbin/onload_cp_server /sbin/
+  strategy:
+    dockerStrategy:
+      buildArgs:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: onload-control-plane:v8.1.0
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: onload-control-plane-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: onload-control-plane-role
+rules:
+# Allow API requests with kubectl
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  # kubectl watch
+  - list
+  - watch
+
+  # kubectl get pod
+  - get
+# Allow running in the host namespaces
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+  resourceNames:
+  - privileged
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: onload-control-plane-rb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: onload-control-plane-role
+subjects:
+- kind: ServiceAccount
+  name: onload-control-plane-sa
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: onload-control-plane-ds
+spec:
+  selector:
+    matchLabels:
+      name: onload-control-plane-ds
+  template:
+    metadata:
+      labels:
+        name: onload-control-plane-ds
+    spec:
+      serviceAccount: onload-control-plane-sa
+      serviceAccountName: onload-control-plane-sa
+      nodeSelector:
+        node-role.kubernetes.io/worker: ""
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
+      containers:
+      - name: onload-control-plane
+        image: image-registry.openshift-image-registry.svc:5000/default/onload-control-plane:v8.1.0
+        imagePullPolicy: Always
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - |
+          set -e
+
+          kubectl wait --for=condition=Ready pod/${POD_NAME}
+          export CONTAINER_ID=$(kubectl get pod -n ${POD_NAMESPACE} -ojson ${POD_NAME} | jq -r '.status.containerStatuses[] | select(.name == "onload-control-plane") | .containerID' | sed 's|cri-o://||g')
+
+          echo /usr/bin/crictl | tee /sys/module/onload/parameters/cplane_server_path
+          echo exec ${CONTAINER_ID} /sbin/onload_cp_server -K | tee /sys/module/onload/parameters/cplane_server_params
+
+          sleep infinity
+
+        securityContext:
+          privileged: true
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
