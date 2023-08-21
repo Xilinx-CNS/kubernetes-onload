@@ -108,7 +108,7 @@ var _ = Describe("onload controller", func() {
 						Version:   "",
 					},
 					DevicePlugin: onloadv1alpha1.DevicePluginSpec{
-						DevicePluginImage: "",
+						DevicePluginImage: "image:tag",
 					},
 					ServiceAccountName: "",
 				},
@@ -171,6 +171,27 @@ var _ = Describe("onload controller", func() {
 
 			By("checking the owner references of the module")
 			Expect(createdControlPlane.ObjectMeta.OwnerReferences).
+				To(ContainElement(MatchFields(IgnoreExtras, Fields{
+					"Name": Equal(onload.Name),
+					"UID":  Equal(onload.UID),
+				})))
+		})
+
+		It("should create a device plugin daemonset", func() {
+			devicePlugin := appsv1.DaemonSet{}
+			devicePluginName := types.NamespacedName{
+				Name:      onload.Name + "-onload-device-plugin-ds",
+				Namespace: onload.Namespace,
+			}
+
+			Expect(k8sClient.Create(ctx, onload)).To(BeNil())
+
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, devicePluginName, &devicePlugin)
+				return err == nil
+			}, timeout, pollingInterval).Should(BeTrue())
+
+			Expect(devicePlugin.ObjectMeta.OwnerReferences).
 				To(ContainElement(MatchFields(IgnoreExtras, Fields{
 					"Name": Equal(onload.Name),
 					"UID":  Equal(onload.UID),

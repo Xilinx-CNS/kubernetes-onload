@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -98,6 +98,13 @@ func (r *OnloadReconciler) Reconcile(
 		log.Error(err, "Failed to create control plane daemon set")
 		return ctrl.Result{}, err
 	}
+
+	err = r.createDevicePluginDaemonSet(ctx, onload)
+	if err != nil {
+		log.Error(err, "Failed to create device plugin daemonset")
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -226,13 +233,13 @@ func (r *OnloadReconciler) createControlPlaneDaemonSet(
 		return err
 	}
 
-	container := v1.Container{
+	container := corev1.Container{
 		Name:            onload.Name + "-onload-cplane",
 		Image:           onload.Spec.Onload.UserImage,
 		ImagePullPolicy: onload.Spec.Onload.ImagePullPolicy,
 		Command:         []string{"/bin/sh", "-c"},
 		Args:            []string{controlPlaneScript},
-		SecurityContext: &v1.SecurityContext{
+		SecurityContext: &corev1.SecurityContext{
 			Privileged: ptr.To(true),
 		},
 	}
@@ -249,17 +256,17 @@ func (r *OnloadReconciler) createControlPlaneDaemonSet(
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{MatchLabels: dsLabels},
-			Template: v1.PodTemplateSpec{
+			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: dsLabels,
 				},
-				Spec: v1.PodSpec{
+				Spec: corev1.PodSpec{
 					ServiceAccountName: onload.Spec.ServiceAccountName,
 					NodeSelector:       onload.Spec.Selector,
 					HostNetwork:        true,
 					HostPID:            true,
 					HostIPC:            true,
-					Containers:         []v1.Container{container},
+					Containers:         []corev1.Container{container},
 				},
 			},
 		},
@@ -271,6 +278,143 @@ func (r *OnloadReconciler) createControlPlaneDaemonSet(
 	}
 
 	return r.Create(ctx, ds)
+}
+
+func (r *OnloadReconciler) createDevicePluginDaemonSet(
+	ctx context.Context, onload *onloadv1alpha1.Onload,
+) error {
+	log := log.FromContext(ctx)
+
+	devicePlugin := &appsv1.DaemonSet{}
+	devicePluginName := onload.Name + "-onload-device-plugin-ds"
+	err := r.Get(
+		ctx,
+		types.NamespacedName{
+			Name:      devicePluginName,
+			Namespace: onload.Namespace,
+		},
+		devicePlugin,
+	)
+	if err == nil {
+		log.Info("Device plugin already exists.")
+		return nil
+	}
+	if !apierrors.IsNotFound(err) {
+		log.Error(err, "Could not find onload device plugin")
+		return err
+	}
+
+	postStart := &corev1.LifecycleHandler{
+		Exec: &corev1.ExecAction{
+			Command: []string{
+				"/bin/sh", "-c",
+				`set -e;
+				cp -TRv /opt/onload /host/onload;
+				chcon --type container_file_t --recursive /host/onload/;`,
+			},
+		},
+	}
+
+	preStop := &corev1.LifecycleHandler{
+		Exec: &corev1.ExecAction{
+			Command: []string{
+				"/bin/sh", "-c",
+				`set -e;
+				rm -r /opt/onload /host/onload;`,
+			},
+		},
+	}
+
+	container := corev1.Container{
+		Name:            onload.Name + "-onload-device-plugin",
+		Image:           onload.Spec.DevicePlugin.DevicePluginImage,
+		ImagePullPolicy: onload.Spec.DevicePlugin.ImagePullPolicy,
+		Command:         []string{"/usr/bin/onload-plugin"},
+		SecurityContext: &corev1.SecurityContext{
+			Privileged: ptr.To(true),
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				MountPath: "/var/lib/kubelet/device-plugins",
+				Name:      "kubelet-socket",
+			},
+			{MountPath: "/host/onload", Name: "host-onload"},
+		},
+		Lifecycle: &corev1.Lifecycle{
+			PostStart: postStart,
+			PreStop:   preStop,
+		},
+	}
+
+	initContainer := corev1.Container{
+		Name:            onload.Name + "-onload-device-plugin" + "-init",
+		Image:           onload.Spec.Onload.UserImage,
+		ImagePullPolicy: onload.Spec.Onload.ImagePullPolicy,
+		Command: []string{
+			"/bin/sh", "-c",
+			`set -e;
+			cp -TRv /opt/onload /host/onload;`,
+		},
+		SecurityContext: &corev1.SecurityContext{
+			Privileged: ptr.To(true),
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{MountPath: "/host/onload", Name: "host-onload"},
+		},
+	}
+
+	dsLabels := map[string]string{"onload.amd.com/name": devicePluginName}
+
+	kubeletSocketVolume := corev1.Volume{
+		Name: "kubelet-socket",
+		VolumeSource: corev1.VolumeSource{
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: "/var/lib/kubelet/device-plugins",
+				Type: ptr.To(corev1.HostPathDirectory),
+			},
+		},
+	}
+
+	hostOnloadVolume := corev1.Volume{
+		Name: "host-onload",
+		VolumeSource: corev1.VolumeSource{
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: "/opt/onload",
+				Type: ptr.To(corev1.HostPathDirectoryOrCreate),
+			},
+		},
+	}
+
+	devicePlugin = &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      devicePluginName,
+			Namespace: onload.Namespace,
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Selector: &metav1.LabelSelector{MatchLabels: dsLabels},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: dsLabels,
+				},
+				Spec: corev1.PodSpec{
+					ServiceAccountName: onload.Spec.ServiceAccountName,
+					Containers:         []corev1.Container{container},
+					Volumes: []corev1.Volume{
+						kubeletSocketVolume,
+						hostOnloadVolume,
+					},
+					NodeSelector: onload.Spec.Selector,
+				},
+			},
+		},
+	}
+
+	err = controllerutil.SetControllerReference(onload, devicePlugin, r.Scheme)
+	if err != nil {
+		return err
+	}
+
+	return r.Create(ctx, devicePlugin)
 }
 
 // SetupWithManager sets up the controller with the Manager.
