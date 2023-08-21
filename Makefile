@@ -55,6 +55,8 @@ OPERATOR_SDK_VERSION ?= v1.31.0
 
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
+# Image URL to use for building/pushing device plugin
+DEVICE_IMG ?= deviceplugin:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.26.0
 
@@ -132,6 +134,18 @@ docker-build: test ## Build docker image with the manager.
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
+
+.PHONY: device-plugin-build
+device-plugin-build: manifests generate fmt vet ## Build device plugin
+	go build ./cmd/deviceplugin/
+
+.PHONY: device-plugin-docker-build
+device-plugin-docker-build: test ## Build docker image with the manager.
+	docker build -t ${DEVICE_IMG} -f deviceplugin.Dockerfile --network="host"
+
+.PHONY: device-plugin-docker-push
+device-plugin-docker-push: test ## Push docker image to the registry.
+	docker push ${DEVICE_IMG}
 
 # PLATFORMS defines the target platforms for  the manager image be build to provide support to multiple
 # architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:
