@@ -54,5 +54,5 @@ spec:
     version: 8.1.0
     imagePullPolicy: Always
   devicePlugin:
-    devicePluginImage: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-device-plugin:latest
+    devicePluginImage: kitchen-sink.kube.test:5000/deviceplugin:latest
     imagePullPolicy: Always

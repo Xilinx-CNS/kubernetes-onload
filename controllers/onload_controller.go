@@ -309,8 +309,7 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 			Command: []string{
 				"/bin/sh", "-c",
 				`set -e;
-				cp -TRv /opt/onload /host/onload;
-				chcon --type container_file_t --recursive /host/onload/;`,
+				chcon --type container_file_t --recursive /opt/onload/;`,
 			},
 		},
 	}
@@ -338,7 +337,7 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 				MountPath: "/var/lib/kubelet/device-plugins",
 				Name:      "kubelet-socket",
 			},
-			{MountPath: "/host/onload", Name: "host-onload"},
+			{MountPath: "/opt/onload", Name: "host-onload"},
 		},
 		Lifecycle: &corev1.Lifecycle{
 			PostStart: postStart,
@@ -403,7 +402,8 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 						kubeletSocketVolume,
 						hostOnloadVolume,
 					},
-					NodeSelector: onload.Spec.Selector,
+					NodeSelector:   onload.Spec.Selector,
+					InitContainers: []corev1.Container{initContainer},
 				},
 			},
 		},
