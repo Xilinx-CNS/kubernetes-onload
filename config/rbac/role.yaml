@@ -33,6 +33,12 @@ rules:
 - apiGroups:
   - onload.amd.com
   resources:
+  - onloads/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - onload.amd.com
+  resources:
   - onloads/status
   verbs:
   - get
