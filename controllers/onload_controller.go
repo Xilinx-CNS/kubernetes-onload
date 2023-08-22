@@ -31,6 +31,7 @@ type OnloadReconciler struct {
 //+kubebuilder:rbac:groups=onload.amd.com,resources=onloads,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=onload.amd.com,resources=onloads/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=kmm.sigs.x-k8s.io,resources=modules,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=onload.amd.com,resources=onloads/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
