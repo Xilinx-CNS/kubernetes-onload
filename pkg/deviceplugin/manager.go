@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
-package main
+package deviceplugin
 
 import (
 	"fmt"
@@ -28,6 +28,14 @@ type NicManager struct {
 	maxPodsPerNode int
 	rpcServer      *RPCServer
 	wg             sync.WaitGroup
+}
+
+func (manager *NicManager) GetInterfaces() []string {
+	return manager.interfaces
+}
+
+func (manager *NicManager) GetDeviceFiles() []*pluginapi.DeviceSpec {
+	return manager.deviceFiles
 }
 
 // Determines the maximum number of pods to allow on each node

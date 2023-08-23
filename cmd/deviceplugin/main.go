@@ -6,6 +6,8 @@ import (
 	"flag"
 
 	"github.com/golang/glog"
+
+	"github.com/Xilinx-CNS/kubernetes-onload/pkg/deviceplugin"
 )
 
 func main() {
@@ -15,11 +17,11 @@ func main() {
 		glog.Fatalf("Failed to initialise device plugin: %v", err)
 	}
 	glog.Info("Starting device plugin")
-	manager, err := NewNicManager()
+	manager, err := deviceplugin.NewNicManager()
 	if err != nil {
 		glog.Fatalf("Failed to initialise device plugin: %v", err)
 	}
-	glog.Infof("SFC interfaces: %s", manager.interfaces)
-	glog.Infof("Device files: %s", manager.deviceFiles)
+	glog.Infof("SFC interfaces: %s", manager.GetInterfaces())
+	glog.Infof("Device files: %s", manager.GetDeviceFiles())
 	manager.Run() /* Blocks forever */
 }
