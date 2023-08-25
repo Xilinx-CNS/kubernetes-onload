@@ -86,6 +86,9 @@ func (r *OnloadReconciler) Reconcile(
 		return res, err
 	}
 
+	log.Info("Adding Onload Device Plugin DaemonSet", "onload.Name",
+		onload.Name, "onload.Namespace", onload.Namespace)
+
 	err = r.createDevicePluginDaemonSet(ctx, onload)
 	if err != nil {
 		log.Error(err, "Failed to create device plugin daemonset")
@@ -116,7 +119,14 @@ func (r *OnloadReconciler) createAndAddModules(
 			},
 			module,
 		)
-		if err != nil && apierrors.IsNotFound(err) {
+
+		if err == nil {
+			log.Info("Onload module already exists", "onload.Name",
+				moduleName, "onload.Namespace", onload.Namespace)
+			continue
+		}
+
+		if apierrors.IsNotFound(err) {
 			module, err := createModule(onload, "onload", moduleName)
 			if err != nil {
 				log.Error(err, "createModule failure")
@@ -138,7 +148,7 @@ func (r *OnloadReconciler) createAndAddModules(
 
 			return false, ctrl.Result{Requeue: true}, nil
 
-		} else if err != nil {
+		} else {
 			log.Error(err, "Failed to get onload-module")
 			return false, ctrl.Result{}, err
 		}
@@ -374,6 +384,7 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		},
 	}
 
+	log.Info("Creating Onload Device Plugin DaemonSet")
 	devicePlugin = &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      devicePluginName,
@@ -418,5 +429,7 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 func (r *OnloadReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&onloadv1alpha1.Onload{}).
+		Owns(&kmm.Module{}).
+		Owns(&appsv1.DaemonSet{}).
 		Complete(r)
 }
