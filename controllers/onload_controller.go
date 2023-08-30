@@ -6,6 +6,7 @@ package controllers
 import (
 	"context"
 	"errors"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -18,7 +19,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kmm "github.com/kubernetes-sigs/kernel-module-management/api/v1beta1"
 
@@ -45,6 +48,7 @@ type OnloadReconciler struct {
 //+kubebuilder:rbac:groups=kmm.sigs.x-k8s.io,resources=modules,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=onload.amd.com,resources=onloads/finalizers,verbs=update
 //+kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="core",resources=nodes,verbs=get;list;watch;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -70,6 +74,11 @@ func (r *OnloadReconciler) Reconcile(
 			// In this way, we will stop the reconciliation
 			log.Info("Onload resource not found." +
 				" Ignoring since object must be deleted")
+			err := r.deleteLabels(ctx, req.NamespacedName)
+			if err != nil {
+				log.Error(err, "Failed to clean labels after deletion")
+				return ctrl.Result{}, err
+			}
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -83,6 +92,11 @@ func (r *OnloadReconciler) Reconcile(
 
 	if isOnloadMarkedToBeDeleted {
 		return ctrl.Result{}, nil
+	}
+
+	err = r.labelNodes(ctx, onload)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
 	log.Info("Adding new Onload kind", "onload.Name",
@@ -106,6 +120,84 @@ func (r *OnloadReconciler) Reconcile(
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func getLabelName(onload onloadv1alpha1.Onload) string {
+	return "onload.amd.com/" + onload.Namespace + "." + onload.Name
+}
+
+func (r *OnloadReconciler) deleteLabels(ctx context.Context, namespacedName types.NamespacedName) error {
+	log := log.FromContext(ctx)
+
+	nodes := corev1.NodeList{}
+	err := r.List(ctx, &nodes)
+	if err != nil {
+		log.Error(err, "Failed to list nodes")
+		return err
+	}
+
+	for _, node := range nodes.Items {
+		nodeCopy := node.DeepCopy()
+		labels := node.GetObjectMeta().GetLabels()
+		for k := range labels {
+			if strings.HasPrefix(k, "onload.amd.com") {
+				delete(labels, k)
+			}
+		}
+		err := r.Patch(ctx, &node, client.MergeFrom(nodeCopy))
+		if err != nil {
+			log.Error(err, "Failed to patch node")
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *OnloadReconciler) labelNodes(ctx context.Context, onload *onloadv1alpha1.Onload) error {
+	log := log.FromContext(ctx)
+
+	selectedNodes := corev1.NodeList{}
+	opt := client.MatchingLabels(onload.Spec.Selector)
+	err := r.List(ctx, &selectedNodes, opt)
+	if err != nil {
+		log.Error(err, "could not list nodes")
+		return err
+	}
+
+	// log.Info("Num nodes", "len", len(selectedNodes.Items))
+	nodesToLabel := make([]corev1.Node, 0, len(selectedNodes.Items))
+	for _, node := range selectedNodes.Items {
+		nodeLabels := node.GetObjectMeta().GetLabels()
+		// log.Info("node", "node", node.ObjectMeta.Name)
+		flag := true
+		for k := range nodeLabels {
+			if strings.HasPrefix(k, "onload.amd.com") {
+				flag = false
+				// log.Info("node has label", "label", k)
+				break
+			}
+		}
+		if flag {
+			// log.Info("added node to list", "node", node)
+			nodesToLabel = append(nodesToLabel, node)
+		}
+	}
+
+	// log.Info("Num nodes to label", "len", len(nodesToLabel))
+
+	for _, node := range nodesToLabel {
+		log.Info("node to label", "name", node.ObjectMeta.Name)
+		nodeCopy := node.DeepCopy()
+		labelKey := getLabelName(*onload)
+		node.Labels[labelKey] = onload.Spec.Onload.Version
+		err := r.Patch(ctx, &node, client.MergeFrom(nodeCopy))
+		if err != nil {
+			log.Error(err, "Failed to patch node with new label")
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *OnloadReconciler) createAndAddModules(
@@ -193,13 +285,13 @@ func createModule(
 				Container: kmm.ModuleLoaderContainerSpec{
 					Modprobe: kmm.ModprobeSpec{
 						ModuleName: modprobeArg,
-						Parameters: []string{"--first-time"},
+						// Parameters: []string{"--first-time"},
 					},
 					KernelMappings:  kernelMappings,
 					ImagePullPolicy: onload.Spec.Onload.ImagePullPolicy,
 				},
 			},
-			Selector: onload.Spec.Selector,
+			Selector: map[string]string{getLabelName(*onload): onload.Spec.Onload.Version},
 		},
 	}
 
@@ -262,7 +354,7 @@ func (r *OnloadReconciler) createControlPlaneDaemonSet(
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: onload.Spec.ServiceAccountName,
-					NodeSelector:       onload.Spec.Selector,
+					NodeSelector:       map[string]string{getLabelName(*onload): onload.Spec.Onload.Version},
 					HostNetwork:        true,
 					HostPID:            true,
 					HostIPC:            true,
@@ -402,7 +494,7 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 						kubeletSocketVolume,
 						hostOnloadVolume,
 					},
-					NodeSelector:   onload.Spec.Selector,
+					NodeSelector:   map[string]string{getLabelName(*onload): onload.Spec.Onload.Version},
 					InitContainers: []corev1.Container{initContainer},
 				},
 			},
@@ -417,9 +509,29 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 	return r.Create(ctx, devicePlugin)
 }
 
+func (r *OnloadReconciler) mapfunc(ctx context.Context, obj client.Object) []reconcile.Request {
+	onloadList := onloadv1alpha1.OnloadList{}
+
+	requests := []reconcile.Request{}
+
+	err := r.List(ctx, &onloadList)
+	if err != nil {
+		//TODO: log an error
+		return requests
+	}
+
+	for _, onload := range onloadList.Items {
+		//TODO: check whether this object matches with the onload's selector
+		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: onload.Name, Namespace: onload.Namespace}})
+	}
+
+	return requests
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *OnloadReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&onloadv1alpha1.Onload{}).
+		Watches(&corev1.Node{}, handler.EnqueueRequestsFromMapFunc(r.mapfunc)).
 		Complete(r)
 }
