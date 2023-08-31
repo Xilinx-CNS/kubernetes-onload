@@ -136,8 +136,12 @@ docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
 .PHONY: device-plugin-build
-device-plugin-build: manifests generate fmt vet ## Build device plugin
-	go build ./cmd/deviceplugin/
+device-plugin-build: ## Build Onload Device Plugin.
+	go build -o ./bin/onload-device-plugin ./cmd/deviceplugin/
+
+.PHONY: worker-build
+worker-build: ## Build Onload worker app.
+	go build -o ./bin/onload-worker ./cmd/worker
 
 .PHONY: device-plugin-docker-build
 device-plugin-docker-build: test ## Build docker image with the manager.

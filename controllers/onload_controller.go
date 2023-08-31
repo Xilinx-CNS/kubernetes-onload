@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
-
 package controllers
 
 import (
@@ -10,6 +9,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
+	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -304,6 +305,54 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		return err
 	}
 
+	devicePluginContainer := corev1.Container{
+		Name:            "device-plugin",
+		Image:           onload.Spec.DevicePlugin.DevicePluginImage,
+		ImagePullPolicy: onload.Spec.DevicePlugin.ImagePullPolicy,
+		SecurityContext: &corev1.SecurityContext{
+			Privileged: ptr.To(true),
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				MountPath: "/var/lib/kubelet/device-plugins",
+				Name:      "kubelet-socket",
+			},
+			{
+				MountPath: "/opt/onload",
+				Name:      "host-onload",
+			},
+		},
+	}
+
+	workerContainerName := "onload-worker"
+
+	workerContainerEnv := []corev1.EnvVar{
+		{
+			Name: "POD_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		},
+		{
+			Name: "POD_NAMESPACE",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.namespace",
+				},
+			},
+		},
+		{
+			Name:  "CONTAINER_NAME",
+			Value: workerContainerName,
+		},
+		{
+			Name:  "ONLOAD_CP_SERVER_PATH",
+			Value: "/mnt/onload/sbin/onload_cp_server",
+		},
+	}
+
 	postStart := &corev1.LifecycleHandler{
 		Exec: &corev1.ExecAction{
 			Command: []string{
@@ -319,30 +368,39 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 			Command: []string{
 				"/bin/sh", "-c",
 				`set -e;
-				rm -r /opt/onload /host/onload;`,
+				rm -r /opt/onload;`,
 			},
 		},
 	}
 
-	container := corev1.Container{
-		Name:            onload.Name + "-onload-device-plugin",
+	workerContainer := corev1.Container{
+		Name:            workerContainerName,
 		Image:           onload.Spec.DevicePlugin.DevicePluginImage,
 		ImagePullPolicy: onload.Spec.DevicePlugin.ImagePullPolicy,
-		Command:         []string{"/usr/bin/onload-plugin"},
+
+		Command: []string{
+			"onload-worker",
+		},
 		SecurityContext: &corev1.SecurityContext{
 			Privileged: ptr.To(true),
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{
-				MountPath: "/var/lib/kubelet/device-plugins",
-				Name:      "kubelet-socket",
+				MountPath: "/opt/onload",
+				Name:      "host-onload",
 			},
-			{MountPath: "/opt/onload", Name: "host-onload"},
+			{
+				MountPath: "/mnt/onload",
+				Name:      "worker-volume",
+			},
 		},
+
+		// Lifecycle to manage the Onload files in the host.
 		Lifecycle: &corev1.Lifecycle{
 			PostStart: postStart,
 			PreStop:   preStop,
 		},
+		Env: workerContainerEnv,
 	}
 
 	initContainer := corev1.Container{
@@ -352,13 +410,24 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		Command: []string{
 			"/bin/sh", "-c",
 			`set -e;
-			cp -TRv /opt/onload /host/onload;`,
+			cp -TRv /opt/onload /host/onload;
+
+			mkdir -v /mnt/onload/sbin/;
+			cp -v /opt/onload/sbin/onload_cp_server /mnt/onload/sbin/;
+			`,
 		},
 		SecurityContext: &corev1.SecurityContext{
 			Privileged: ptr.To(true),
 		},
 		VolumeMounts: []corev1.VolumeMount{
-			{MountPath: "/host/onload", Name: "host-onload"},
+			{
+				MountPath: "/host/onload",
+				Name:      "host-onload",
+			},
+			{
+				MountPath: "/mnt/onload",
+				Name:      "worker-volume",
+			},
 		},
 	}
 
@@ -384,6 +453,15 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		},
 	}
 
+	emptyDirVolume := corev1.Volume{
+		Name: "worker-volume",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{
+				SizeLimit: apiresource.NewQuantity(8*1024*1024, resource.BinarySI),
+			},
+		},
+	}
+
 	devicePlugin = &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      devicePluginName,
@@ -397,13 +475,20 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: onload.Spec.ServiceAccountName,
-					Containers:         []corev1.Container{container},
+					Containers: []corev1.Container{
+						devicePluginContainer,
+						workerContainer,
+					},
 					Volumes: []corev1.Volume{
 						kubeletSocketVolume,
 						hostOnloadVolume,
+						emptyDirVolume,
 					},
 					NodeSelector:   onload.Spec.Selector,
 					InitContainers: []corev1.Container{initContainer},
+					HostNetwork:    true,
+					HostPID:        true,
+					HostIPC:        true,
 				},
 			},
 		},
