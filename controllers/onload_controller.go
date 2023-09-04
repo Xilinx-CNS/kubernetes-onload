@@ -27,14 +27,6 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-const controlPlaneScript = `
-set -e;
-echo /usr/bin/crictl | tee /sys/module/onload/parameters/cplane_server_path;
-declare -r container_id=$(awk -F'[-./]' '/crio-/{print $(NF - 1); exit}' /proc/self/cgroup);
-echo exec ${container_id} /opt/onload/sbin/onload_cp_server -K | tee /sys/module/onload/parameters/cplane_server_params;
-sleep infinity;
-`
-
 // OnloadReconciler reconciles a Onload object
 type OnloadReconciler struct {
 	client.Client
@@ -92,12 +84,6 @@ func (r *OnloadReconciler) Reconcile(
 	ok, res, err := r.createAndAddModules(ctx, onload)
 	if !ok {
 		return res, err
-	}
-
-	err = r.createControlPlaneDaemonSet(ctx, onload)
-	if err != nil {
-		log.Error(err, "Failed to create control plane daemon set")
-		return ctrl.Result{}, err
 	}
 
 	err = r.createDevicePluginDaemonSet(ctx, onload)
@@ -205,80 +191,6 @@ func createModule(
 	}
 
 	return module, nil
-}
-
-func (r *OnloadReconciler) createControlPlaneDaemonSet(
-	ctx context.Context, onload *onloadv1alpha1.Onload,
-) error {
-	log := log.FromContext(ctx)
-
-	dsName := onload.Name + "-onload-cplane-ds"
-
-	// Create the control plane daemon set only if it has not been created.
-	ds := &appsv1.DaemonSet{}
-	err := r.Get(
-		ctx,
-		types.NamespacedName{
-			Name:      dsName,
-			Namespace: onload.Namespace,
-		},
-		ds,
-	)
-
-	if err == nil {
-		log.Info("The control plane daemon set exists")
-		return nil
-	}
-
-	if !apierrors.IsNotFound(err) {
-		return err
-	}
-
-	container := corev1.Container{
-		Name:            onload.Name + "-onload-cplane",
-		Image:           onload.Spec.Onload.UserImage,
-		ImagePullPolicy: onload.Spec.Onload.ImagePullPolicy,
-		Command:         []string{"/bin/sh", "-c"},
-		Args:            []string{controlPlaneScript},
-		SecurityContext: &corev1.SecurityContext{
-			Privileged: ptr.To(true),
-		},
-	}
-
-	dsLabels := map[string]string{
-		"onload.amd.com/name": dsName,
-	}
-
-	log.Info("Creating control plane daemon set")
-	ds = &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dsName,
-			Namespace: onload.Namespace,
-		},
-		Spec: appsv1.DaemonSetSpec{
-			Selector: &metav1.LabelSelector{MatchLabels: dsLabels},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: dsLabels,
-				},
-				Spec: corev1.PodSpec{
-					ServiceAccountName: onload.Spec.ServiceAccountName,
-					NodeSelector:       onload.Spec.Selector,
-					HostNetwork:        true,
-					HostPID:            true,
-					HostIPC:            true,
-					Containers:         []corev1.Container{container},
-				},
-			},
-		},
-	}
-
-	err = controllerutil.SetControllerReference(onload, ds, r.Scheme)
-	if err != nil {
-		return err
-	}
-
-	return r.Create(ctx, ds)
 }
 
 func (r *OnloadReconciler) createDevicePluginDaemonSet(
