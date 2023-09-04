@@ -8,9 +8,9 @@ require (
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.8
 	google.golang.org/grpc v1.54.0
-	k8s.io/api v0.28.0
-	k8s.io/apimachinery v0.28.0
-	k8s.io/client-go v0.28.0
+	k8s.io/api v0.28.1
+	k8s.io/apimachinery v0.28.1
+	k8s.io/client-go v0.28.1
 	k8s.io/kubelet v0.28.0
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	sigs.k8s.io/controller-runtime v0.15.0
