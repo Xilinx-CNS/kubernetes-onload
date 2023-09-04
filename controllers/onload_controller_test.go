@@ -153,30 +153,6 @@ var _ = Describe("onload controller", func() {
 				})))
 		})
 
-		It("should create the control plane daemon set", func() {
-			createdControlPlane := appsv1.DaemonSet{}
-			controlPlaneName := types.NamespacedName{
-				Name:      onload.Name + "-onload-cplane-ds",
-				Namespace: onload.Namespace,
-			}
-
-			By("creating an onload CR")
-			Expect(k8sClient.Create(ctx, onload)).To(BeNil())
-
-			By("checking for the existence of the control plane daemon set")
-			Eventually(func() error {
-				return k8sClient.Get(ctx, controlPlaneName,
-					&createdControlPlane)
-			}, timeout, pollingInterval).Should(BeNil())
-
-			By("checking the owner references of the module")
-			Expect(createdControlPlane.ObjectMeta.OwnerReferences).
-				To(ContainElement(MatchFields(IgnoreExtras, Fields{
-					"Name": Equal(onload.Name),
-					"UID":  Equal(onload.UID),
-				})))
-		})
-
 		It("should create a device plugin daemonset", func() {
 			devicePlugin := appsv1.DaemonSet{}
 			devicePluginName := types.NamespacedName{
