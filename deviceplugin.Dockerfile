@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
-FROM golang:1.20.4 AS builder
+FROM golang:1.21 AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY pkg/deviceplugin /app/pkg/deviceplugin
 COPY cmd/deviceplugin /app/cmd/deviceplugin
 COPY cmd/worker /app/cmd/worker
 
-RUN make device-plugin-build worker-build
+RUN CGO_ENABLED=0 make device-plugin-build worker-build
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.8
 RUN microdnf install lshw
