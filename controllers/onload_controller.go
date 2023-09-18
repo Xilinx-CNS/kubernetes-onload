@@ -3,8 +3,10 @@
 package controllers
 
 import (
+	"cmp"
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -414,20 +416,10 @@ func (r *OnloadReconciler) handleUpdate(ctx context.Context, onload *onloadv1alp
 	// Since I don't know if there are any guarantees about how they are ordered
 	// when returned from List(), we shall upgrade nodes by their name
 	// alphabetically.
-	// Golang 1.21 introduces the "slices" package which would allow us to find
-	// the min element of a slice in a single line, however at the moment the
-	// operator is written in Go 1.19 so this package isn't available.
-	// In it's absence I am just using a local funcion.
 
-	node := func(nodes []corev1.Node) corev1.Node {
-		min := nodes[0]
-		for _, node := range nodes {
-			if node.Name < min.Name {
-				min = node
-			}
-		}
-		return min
-	}(nodesToUpgrade)
+	node := slices.MinFunc(nodesToUpgrade, func(a, b corev1.Node) int {
+		return cmp.Compare(a.Name, b.Name)
+	})
 
 	log.Info("Updating Onload version on Node "+node.Name, "Onload", onload)
 

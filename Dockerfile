@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 
 # Build the manager binary
-FROM golang:1.19 as builder
+FROM golang:1.21 as builder
 ARG TARGETOS
 ARG TARGETARCH
 

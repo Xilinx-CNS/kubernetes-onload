@@ -1,6 +1,6 @@
 module github.com/Xilinx-CNS/kubernetes-onload
 
-go 1.19
+go 1.21
 
 require (
 	github.com/golang/glog v1.1.2
