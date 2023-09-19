@@ -10,14 +10,23 @@ import (
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// Currently unimplemented
+type SFCSpec struct {
+}
+
 type OnloadKernelMapping struct {
 	// Regexp is a regular expression that is used to match against the kernel
 	// versions of the nodes in the cluster
 	Regexp string `json:"regexp"`
 
-	// KernelImage is the image that contains the out-of-tree kernel modules
-	// used by onload, including the sfc driver.
+	// KernelModuleImage is the image that contains the out-of-tree kernel
+	// modules used by Onload.
 	KernelModuleImage string `json:"kernelModuleImage"`
+
+	// +optional
+	// SFC optionally specifies that the controller will manage the SFC
+	// kernel module.
+	SFC *SFCSpec `json:"sfc,omitempty"`
 }
 
 // OnloadSpec defines the desired state of Onload
