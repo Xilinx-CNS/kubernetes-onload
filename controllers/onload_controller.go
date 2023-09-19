@@ -169,6 +169,12 @@ func (r *OnloadReconciler) listNodesWithLabels(ctx context.Context, labelString 
 	return nodes, nil
 }
 
+func (r *OnloadReconciler) deleteLabelFromNode(ctx context.Context, node corev1.Node, label string) error {
+	nodeCopy := node.DeepCopy()
+	delete(node.Labels, label)
+	return r.Patch(ctx, &node, client.MergeFrom(nodeCopy))
+}
+
 func (r *OnloadReconciler) deleteLabels(ctx context.Context, namespacedName types.NamespacedName) error {
 	log := log.FromContext(ctx)
 
@@ -179,9 +185,7 @@ func (r *OnloadReconciler) deleteLabels(ctx context.Context, namespacedName type
 		}
 
 		for _, node := range nodes.Items {
-			nodeCopy := node.DeepCopy()
-			delete(node.Labels, label)
-			err := r.Patch(ctx, &node, client.MergeFrom(nodeCopy))
+			err := r.deleteLabelFromNode(ctx, node, label)
 			if err != nil {
 				log.Error(err, "Failed to remove label from Node",
 					"Node", node.Name, "label key", label)
@@ -219,7 +223,7 @@ func (r *OnloadReconciler) addKmmLabelsToNodes(ctx context.Context, onload *onlo
 
 	for _, node := range nodes.Items {
 		if _, found := node.Labels[labelKey]; !found {
-			// Check that there isn't a lingering module pod
+			// Check that there isn't a lingering module pod.
 			// This can be removed, but without it the upgrade process is more
 			// concurrent (rather than rolling), which leads to more pod
 			// restarts/failures. Both methods work, but this approach maintains
@@ -228,7 +232,7 @@ func (r *OnloadReconciler) addKmmLabelsToNodes(ctx context.Context, onload *onlo
 			if err != nil {
 				return nil, err
 			} else if len(pods) > 0 {
-				log.Info("Lingering Module Pod on Node " + node.Name)
+				log.Info("Lingering Module Pod(s)", "Node", node.Name)
 				return &ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
 			}
 
@@ -388,48 +392,14 @@ func (r *OnloadReconciler) handleModuleUpdate(ctx context.Context, onload *onloa
 	return &ctrl.Result{Requeue: true}, nil
 }
 
-const defaultRequeueTime = 5 * time.Second
-
-func (r *OnloadReconciler) handleUpdate(ctx context.Context, onload *onloadv1alpha1.Onload) (*ctrl.Result, error) {
+func (r *OnloadReconciler) handleNodeUpdate(ctx context.Context, onload *onloadv1alpha1.Onload, node corev1.Node) (*ctrl.Result, error) {
 	log := log.FromContext(ctx)
-
-	res, err := r.handleDevicePluginUpdate(ctx, onload)
-	if err != nil || res != nil {
-		return res, err
-	}
-
-	res, err = r.handleModuleUpdate(ctx, onload)
-	if err != nil || res != nil {
-		return res, err
-	}
-
-	nodesToUpgrade, err := r.getNodesToUpgrade(ctx, onload)
-	if err != nil {
-		return nil, err
-	}
-	if len(nodesToUpgrade) == 0 {
-		// Nothing to be done, so return
-		return nil, nil
-	}
-
-	// We just want to upgrade a single node at a time.
-	// Since I don't know if there are any guarantees about how they are ordered
-	// when returned from List(), we shall upgrade nodes by their name
-	// alphabetically.
-
-	node := slices.MinFunc(nodesToUpgrade, func(a, b corev1.Node) int {
-		return cmp.Compare(a.Name, b.Name)
-	})
-
-	log.Info("Updating Onload version on Node "+node.Name, "Onload", onload)
 
 	// Remove the onload label from the node
 	onloadLabelName := onloadLabelName(onload.Name, onload.Namespace)
 	onloadLabelVersion, found := node.Labels[onloadLabelName]
 	if found && onloadLabelVersion != onload.Spec.Onload.Version {
-		oldNode := node.DeepCopy()
-		delete(node.Labels, onloadLabelName)
-		err := r.Patch(ctx, &node, client.MergeFrom(oldNode))
+		err := r.deleteLabelFromNode(ctx, node, onloadLabelName)
 		if err != nil {
 			log.Error(err, "Could not patch Node to remove Onload label",
 				"Node", node.Name)
@@ -455,16 +425,14 @@ func (r *OnloadReconciler) handleUpdate(ctx context.Context, onload *onloadv1alp
 	}
 
 	// Evict pods using the onload resource
-	res, err = r.evictOnloadedPods(ctx, node)
+	res, err := r.evictOnloadedPods(ctx, node)
 	if err != nil || res != nil {
 		return res, err
 	}
 
 	// Remove kmm label
-	oldNode := node.DeepCopy()
 	labelName := kmmLabelName(onload.Name, onload.Namespace)
-	delete(node.Labels, labelName)
-	err = r.Patch(ctx, &node, client.MergeFrom(oldNode))
+	err = r.deleteLabelFromNode(ctx, node, labelName)
 	if err != nil {
 		log.Error(err, "Could not patch node (removing kmm label) Node: "+node.Name)
 		return nil, err
@@ -476,14 +444,48 @@ func (r *OnloadReconciler) handleUpdate(ctx context.Context, onload *onloadv1alp
 	return &ctrl.Result{Requeue: true}, nil
 }
 
-// This is just a temporary (TM) function since using a field selector isn't
-// working (for our operator at the moment).
-// By default the controller uses a caching client for reading operations from
-// the cluster, but this isn't by default compatible with using a field selector
-// My understanding is that adding an indexer should be sufficient to get this
-// working, but it is a non-trivial fix and so it is left for later.
+const defaultRequeueTime = 5 * time.Second
+
+func (r *OnloadReconciler) handleUpdate(ctx context.Context, onload *onloadv1alpha1.Onload) (*ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	res, err := r.handleDevicePluginUpdate(ctx, onload)
+	if err != nil || res != nil {
+		return res, err
+	}
+
+	res, err = r.handleModuleUpdate(ctx, onload)
+	if err != nil || res != nil {
+		return res, err
+	}
+
+	nodesToUpgrade, err := r.getNodesToUpgrade(ctx, onload)
+	if err != nil {
+		return nil, err
+	}
+	if len(nodesToUpgrade) == 0 {
+		// Nothing to be done, so return
+		return nil, nil
+	}
+
+	// Upgrade a single node at a time in alphabetical order.
+	node := slices.MinFunc(nodesToUpgrade, func(a, b corev1.Node) int {
+		return cmp.Compare(a.Name, b.Name)
+	})
+
+	log.Info("Updating Onload version", "Node", node.Name, "Onload", onload)
+	return r.handleNodeUpdate(ctx, onload, node)
+}
+
 func (r *OnloadReconciler) getPodsOnNode(ctx context.Context, labelSelector map[string]string, nodeName string) ([]corev1.Pod, error) {
 	log := log.FromContext(ctx)
+
+	// Ideally we would use a field selector to just list pods where the
+	// spec.nodeName field matches the node we care about. Unfortunately by
+	// default the controller client uses caching for read operations from the
+	// cluster. This means that we field selectors do not currently work.
+	// My understanding is that adding an indexer should be sufficient to get
+	// this working, but it is a non-trivial fix and so it is left for later.
 
 	podList := corev1.PodList{}
 	opt := client.ListOptions{
@@ -495,7 +497,7 @@ func (r *OnloadReconciler) getPodsOnNode(ctx context.Context, labelSelector map[
 
 	err := r.List(ctx, &podList, &opt)
 	if err != nil {
-		log.Error(err, "Failed to list Pods with field and label selectors")
+		log.Error(err, "Failed to list Pods with label selector")
 		return pods, err
 	}
 
@@ -511,23 +513,18 @@ func (r *OnloadReconciler) getPodsOnNode(ctx context.Context, labelSelector map[
 func (r *OnloadReconciler) getPodsUsingOnload(ctx context.Context, node corev1.Node) ([]corev1.Pod, error) {
 	log := log.FromContext(ctx)
 
-	allPods := corev1.PodList{}
 	podsUsingOnload := []corev1.Pod{}
 
 	// Ideally this func should be using a field selector, but that requires
 	// using a non-caching reader.
-	// For now we have to get all pods, then manually filter by nodeName and
-	// resource requests.
+	// For now we have to manually filter by resource requests.
 
-	err := r.List(ctx, &allPods)
+	allPods, err := r.getPodsOnNode(ctx, map[string]string{}, node.Name)
 	if err != nil {
 		log.Error(err, "Failed to list Pods")
 	}
 
-	for _, pod := range allPods.Items {
-		if pod.Spec.NodeName != node.Name {
-			continue
-		}
+	for _, pod := range allPods {
 		for _, container := range pod.Spec.Containers {
 			numOnloads := container.Resources.Requests.Name("amd.com/onload", resource.DecimalSI)
 			if numOnloads != nil && numOnloads.CmpInt64(0) > 0 {
@@ -571,7 +568,7 @@ func (r *OnloadReconciler) evictOnloadedPods(ctx context.Context, node corev1.No
 	if changesMade {
 		log.Info("Created evictions for Pods using Onload", "Node", node.Name)
 	} else {
-		log.Info("Waiting for Pods using Onload to die", "Node", node.Name)
+		log.Info("Waiting for Pods using Onload to terminate", "Node", node.Name)
 	}
 	return &ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
 }
