@@ -10,6 +10,7 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -480,34 +481,21 @@ func (r *OnloadReconciler) handleUpdate(ctx context.Context, onload *onloadv1alp
 func (r *OnloadReconciler) getPodsOnNode(ctx context.Context, labelSelector map[string]string, nodeName string) ([]corev1.Pod, error) {
 	log := log.FromContext(ctx)
 
-	// Ideally we would use a field selector to just list pods where the
-	// spec.nodeName field matches the node we care about. Unfortunately by
-	// default the controller client uses caching for read operations from the
-	// cluster. This means that we field selectors do not currently work.
-	// My understanding is that adding an indexer should be sufficient to get
-	// this working, but it is a non-trivial fix and so it is left for later.
-
 	podList := corev1.PodList{}
 	opt := client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set(labelSelector)),
-		// FieldSelector: fields.SelectorFromSet(fields.Set{"spec.nodeName": node.Name}),
+		FieldSelector: fields.SelectorFromSet(fields.Set{"spec.nodeName": nodeName}),
 	}
 
 	pods := []corev1.Pod{}
 
 	err := r.List(ctx, &podList, &opt)
 	if err != nil {
-		log.Error(err, "Failed to list Pods with label selector")
+		log.Error(err, "Failed to list Pods with selector(s)")
 		return pods, err
 	}
 
-	for _, pod := range podList.Items {
-		if pod.Spec.NodeName == nodeName {
-			pods = append(pods, pod)
-		}
-	}
-
-	return pods, nil
+	return podList.Items, nil
 }
 
 func (r *OnloadReconciler) getPodsUsingOnload(ctx context.Context, node corev1.Node) ([]corev1.Pod, error) {
@@ -515,14 +503,17 @@ func (r *OnloadReconciler) getPodsUsingOnload(ctx context.Context, node corev1.N
 
 	podsUsingOnload := []corev1.Pod{}
 
-	// Ideally this func should be using a field selector, but that requires
-	// using a non-caching reader.
-	// For now we have to manually filter by resource requests.
-
 	allPods, err := r.getPodsOnNode(ctx, map[string]string{}, node.Name)
 	if err != nil {
 		log.Error(err, "Failed to list Pods")
 	}
+
+	// Ideally this function should be using a field selector that matches both
+	// node.Name and pods the resource request, unfortunately k8s doesn't
+	// currently support multiple requirements in a field selector. This means
+	// that we will have to filter the pods manually.
+	// https://github.com/kubernetes-sigs/controller-runtime/blob/d5bc8734caccabddac6a1bea250b0b9d771d318d/pkg/cache/internal/cache_reader.go#L120
+	// https://github.com/kubernetes-sigs/controller-runtime/blob/d5bc8734caccabddac6a1bea250b0b9d771d318d/pkg/internal/field/selector/utils.go#L27
 
 	for _, pod := range allPods {
 		for _, container := range pod.Spec.Containers {
@@ -946,6 +937,14 @@ func (r *OnloadReconciler) nodeLabelWatchFunc(ctx context.Context, obj client.Ob
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *OnloadReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	err := mgr.GetFieldIndexer().IndexField(context.Background(),
+		&corev1.Pod{}, "spec.nodeName", func(o client.Object) []string {
+			return []string{o.(*corev1.Pod).Spec.NodeName}
+		})
+	if err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&onloadv1alpha1.Onload{}).
 		Owns(&kmm.Module{}).
