@@ -39,22 +39,6 @@ var _ = Describe("Testing createModule function", func() {
 		Expect(err).Should(Succeed())
 	})
 
-	It("Should fail if a build parameter was supplied", func() {
-		onload.Spec = onloadv1alpha1.Spec{
-			Onload: onloadv1alpha1.OnloadSpec{
-				KernelMappings: []onloadv1alpha1.OnloadKernelMapping{
-					{
-						Regexp:            "example",
-						KernelModuleImage: "example",
-						Build:             &onloadv1alpha1.OnloadKernelBuildSpec{},
-					},
-				},
-			},
-		}
-		_, err := createModule(onload, "example", "example")
-		Expect(err).To(HaveOccurred())
-	})
-
 	It("Should have the correct number of kernel mappings", func() {
 		for i := 0; i < 10; i++ {
 			onload.Spec.Onload.KernelMappings = append(

@@ -5,7 +5,6 @@ package controllers
 import (
 	"cmp"
 	"context"
-	"errors"
 	"slices"
 	"time"
 
@@ -669,12 +668,6 @@ func createModule(
 	kernelMappings := []kmm.KernelMapping{}
 
 	for _, kmapSpec := range onload.Spec.Onload.KernelMappings {
-		if kmapSpec.Build != nil {
-			return nil, errors.New(
-				"build keys in KernelMappings aren't currently supported",
-			)
-		}
-
 		kmap := kmm.KernelMapping{
 			Regexp:         kmapSpec.Regexp,
 			ContainerImage: kmapSpec.KernelModuleImage,

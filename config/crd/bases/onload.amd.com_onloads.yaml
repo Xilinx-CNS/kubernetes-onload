@@ -41,10 +41,6 @@ spec:
                 description: DevicePlugin is the specification of the device plugin
                   that will add a new onload resource into the cluster.
                 properties:
-                  devicePluginBuild:
-                    description: Specific instructions for building the device plugin
-                      image.
-                    type: object
                   devicePluginImage:
                     description: DevicePluginImage
                     type: string
@@ -59,12 +55,6 @@ spec:
                 description: Onload is the specification of the version of onload
                   to be used by this CR
                 properties:
-                  build:
-                    description: Build contains build options for building user level
-                      components. If non-nil the operator will attempt to build the
-                      required images using what is defined in the build section,
-                      and push the images to the specified locations.
-                    type: object
                   imagePullPolicy:
                     description: 'ImagePullPolicy is the policy used when pulling
                       images. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images'
@@ -75,13 +65,6 @@ spec:
                       are heterogenous kernel versions on the nodes in the cluster.
                     items:
                       properties:
-                        build:
-                          description: Build contains build options for building kernel
-                            level components. If non-nil the operator will attempt
-                            to build the required images using what is defined in
-                            the build section, and push the images to the specified
-                            locations.
-                          type: object
                         kernelModuleImage:
                           description: KernelImage is the image that contains the
                             out-of-tree kernel modules used by onload, including the
