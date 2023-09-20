@@ -229,6 +229,30 @@ var _ = Describe("Testing using mocked client", func() {
 			Expect(r.addOnloadLabelsToNodes(ctx, &onload)).Should(Equal(&ctrl.Result{Requeue: true}))
 		})
 
+		It("should remove stale kmm labels from nodes that no longer match the selector", func() {
+			labelKey := kmmLabelName(onload.Name, onload.Namespace)
+
+			// Add the kmm label to the node, and remove "key" so that it
+			// doesn't match onload.Spec.Selector
+			nodes.Items[0].Labels[labelKey] = onload.Spec.Onload.Version
+			delete(nodes.Items[0].Labels, "key")
+
+			// Listing nodes
+			mockClient.EXPECT().
+				List(gomock.Any(), &corev1.NodeList{}, gomock.Any()).
+				SetArg(1, nodes).
+				Return(nil).
+				Times(1)
+
+			// Patching nodes to remove the label
+			mockClient.EXPECT().
+				Patch(gomock.Any(), &nodes.Items[0], gomock.Any()).
+				Return(nil).
+				Times(1)
+
+			Expect(r.removeStaleLabels(ctx, &onload, labelKey)).Should(Equal(&ctrl.Result{Requeue: true}))
+		})
+
 	})
 
 	Context("Testing node updates", func() {
