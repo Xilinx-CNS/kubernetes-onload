@@ -10,10 +10,6 @@ import (
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// Currently unimplemented
-type OnloadKernelBuildSpec struct {
-}
-
 type OnloadKernelMapping struct {
 	// Regexp is a regular expression that is used to match against the kernel
 	// versions of the nodes in the cluster
@@ -22,17 +18,6 @@ type OnloadKernelMapping struct {
 	// KernelImage is the image that contains the out-of-tree kernel modules
 	// used by onload, including the sfc driver.
 	KernelModuleImage string `json:"kernelModuleImage"`
-
-	// +optional
-	// Build contains build options for building kernel level components.
-	// If non-nil the operator will attempt to build the required images using
-	// what is defined in the build section, and push the images to the
-	// specified locations.
-	Build *OnloadKernelBuildSpec `json:"build"`
-}
-
-// Currently unimplemented
-type OnloadUserBuildSpec struct {
 }
 
 // OnloadSpec defines the desired state of Onload
@@ -54,27 +39,12 @@ type OnloadSpec struct {
 	// ImagePullPolicy is the policy used when pulling images.
 	// More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
-
-	// +optional
-	// Build contains build options for building user level components.
-	// If non-nil the operator will attempt to build the required images using
-	// what is defined in the build section, and push the images to the
-	// specified locations.
-	Build *OnloadUserBuildSpec `json:"build,omitempty"`
-}
-
-// Currently unimplemented
-type DevicePluginBuildSpec struct {
 }
 
 // Currently unimplemented
 type DevicePluginSpec struct {
 	// DevicePluginImage
 	DevicePluginImage string `json:"devicePluginImage"`
-
-	// +optional
-	// Specific instructions for building the device plugin image.
-	DevicePluginBuild *DevicePluginBuildSpec `json:"devicePluginBuild,omitempty"`
 
 	// +optional
 	// ImagePullPolicy is the policy used when pulling images.
