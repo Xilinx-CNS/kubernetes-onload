@@ -116,7 +116,7 @@ func (r *OnloadReconciler) Reconcile(
 		log.Error(err, "Failed to add Onload label to nodes")
 		return ctrl.Result{}, err
 	} else if res != nil {
-		log.Info("Labelled nodes with Onload label")
+		// logging is handled in the function
 		return *res, nil
 	}
 
@@ -248,13 +248,12 @@ func (r *OnloadReconciler) addKmmLabelsToNodes(ctx context.Context, onload *onlo
 		}
 	}
 
-	var res *ctrl.Result = nil
 	if changesMade {
 		log.Info("Labelled Nodes with kmm label")
-		res = &ctrl.Result{Requeue: true}
+		return &ctrl.Result{Requeue: true}, nil
 	}
 
-	return res, nil
+	return r.removeStaleLabels(ctx, onload, labelKey)
 }
 
 func (r *OnloadReconciler) addOnloadLabelsToNodes(ctx context.Context, onload *onloadv1alpha1.Onload) (*ctrl.Result, error) {
@@ -289,12 +288,53 @@ func (r *OnloadReconciler) addOnloadLabelsToNodes(ctx context.Context, onload *o
 		}
 	}
 
-	var res *ctrl.Result = nil
 	if changesMade {
-		res = &ctrl.Result{Requeue: true}
+		log.Info("Labelled nodes with Onload label")
+		return &ctrl.Result{Requeue: true}, nil
 	}
 
-	return res, nil
+	return r.removeStaleLabels(ctx, onload, labelKey)
+}
+
+func (r *OnloadReconciler) removeStaleLabels(ctx context.Context, onload *onloadv1alpha1.Onload, labelKey string) (*ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	nodes := corev1.NodeList{}
+	kmmSelector, err := labels.Parse(labelKey)
+	if err != nil {
+		log.Error(err, "Failed to parse label into Selector", "label", labelKey)
+		return nil, err
+	}
+
+	onloadLabels := labels.FormatLabels(onload.Spec.Selector)
+	onloadSelector, err := labels.Parse(onloadLabels)
+	if err != nil {
+		log.Error(err, "Failed to parse Onload spec.selector into Selector object",
+			"Onload", onload, "spec.selector", onload.Spec.Selector)
+		return nil, err
+	}
+
+	r.List(ctx, &nodes, &client.ListOptions{LabelSelector: kmmSelector})
+
+	changesMade := false
+	for _, node := range nodes.Items {
+		if !onloadSelector.Matches(labels.Set(node.Labels)) {
+			err := r.deleteLabelFromNode(ctx, node, labelKey)
+			if err != nil {
+				log.Error(err, "Failed to remove stale label from Node",
+					"Node", node, "Label", labelKey)
+				return nil, err
+			}
+			changesMade = true
+		}
+	}
+
+	if changesMade {
+		log.Info("Deleted stale label from Nodes", "Label", labelKey)
+		return &ctrl.Result{Requeue: true}, nil
+	}
+
+	return nil, nil
 }
 
 func (r *OnloadReconciler) getNodesToUpgrade(ctx context.Context, onload *onloadv1alpha1.Onload) ([]corev1.Node, error) {
