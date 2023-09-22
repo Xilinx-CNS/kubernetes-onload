@@ -56,7 +56,7 @@ var _ = BeforeSuite(func() {
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "config", "crd", "bases"),
 			filepath.Join(build.Default.GOPATH, "pkg", "mod", "github.com",
-				"kubernetes-sigs", "kernel-module-management@v1.0.0",
+				"kubernetes-sigs", "kernel-module-management@v1.1.0",
 				"config", "crd", "bases"),
 		},
 		ErrorIfCRDPathMissing: true,
