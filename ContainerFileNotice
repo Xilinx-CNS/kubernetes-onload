@@ -199,7 +199,7 @@ deviceplugin.Dockerfile:
 |-------------------------------------------------------------+--------------+----------------------------------------------------------------------------------------|
 | github.com/golang/glog, v1.1.2                              | Apache-2.0   | https://github.com/golang/glog/blob/v1.1.2/LICENSE                                     |
 |-------------------------------------------------------------+--------------+----------------------------------------------------------------------------------------|
-| github.com/kubernetes-sigs/kernel-module-management, v1.0.0 | Apache-2.0   | https://github.com/kubernetes-sigs/kernel-module-management/blob/v1.0.0/LICENSE        |
+| github.com/kubernetes-sigs/kernel-module-management, v1.1.0 | Apache-2.0   | https://github.com/kubernetes-sigs/kernel-module-management/blob/v1.1.0/LICENSE        |
 |-------------------------------------------------------------+--------------+----------------------------------------------------------------------------------------|
 | github.com/onsi/ginkgo/v2, v2.11.0                          | MIT          | https://github.com/onsi/ginkgo/blob/v2.11.0/LICENSE                                    |
 |-------------------------------------------------------------+--------------+----------------------------------------------------------------------------------------|
