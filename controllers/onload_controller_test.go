@@ -29,14 +29,25 @@ import (
 
 var _ = Describe("Testing createModule function", func() {
 	var onload *onloadv1alpha1.Onload
+	var exampleKernelMapper kernelMapperFn
 
 	BeforeEach(func() {
 		onload = &onloadv1alpha1.Onload{}
+
+		exampleKernelMapper = func(spec onloadv1alpha1.OnloadKernelMapping) *kmm.KernelMapping {
+			return &kmm.KernelMapping{
+				Regexp:         spec.Regexp,
+				ContainerImage: spec.KernelModuleImage,
+			}
+		}
 	})
 
 	It("Should work with a valid onload CR", func() {
-		_, err := createModule(onload, "example", "example")
+		module, err := createModule(onload, "example", "example.ko", "old-example.ko", exampleKernelMapper)
 		Expect(err).Should(Succeed())
+
+		Expect(module.Spec.ModuleLoader.Container.Modprobe.ModuleName).To(Equal("example.ko"))
+		Expect(module.Spec.ModuleLoader.Container.InTreeModuleToRemove).To(Equal("old-example.ko"))
 	})
 
 	It("Should have the correct number of kernel mappings", func() {
@@ -46,11 +57,54 @@ var _ = Describe("Testing createModule function", func() {
 				onloadv1alpha1.OnloadKernelMapping{},
 			)
 		}
-		module, err := createModule(onload, "example", "example")
+		module, err := createModule(onload, "example", "example", "example", exampleKernelMapper)
 		Expect(err).Should(Succeed())
 
 		Expect(len(module.Spec.ModuleLoader.Container.KernelMappings)).
 			To(Equal(len(onload.Spec.Onload.KernelMappings)))
+	})
+})
+
+var _ = Describe("Testing onloadUsesSFC predicate", func() {
+	var (
+		onloadWithSFC    onloadv1alpha1.Onload
+		onloadWithoutSFC onloadv1alpha1.Onload
+	)
+
+	BeforeEach(func() {
+		onloadWithoutSFC = onloadv1alpha1.Onload{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "name",
+				Namespace: "namespace",
+			},
+			Spec: onloadv1alpha1.Spec{
+				Selector: map[string]string{
+					"key": "value",
+				},
+
+				Onload: onloadv1alpha1.OnloadSpec{
+					KernelMappings: []onloadv1alpha1.OnloadKernelMapping{
+						{
+							KernelModuleImage: "",
+							Regexp:            "",
+						},
+					},
+					UserImage: "image:tag",
+					Version:   "foo",
+				},
+			},
+		}
+
+		onloadWithoutSFC.DeepCopyInto(&onloadWithSFC)
+		onloadWithSFC.Spec.Onload.KernelMappings[0].SFC = &onloadv1alpha1.SFCSpec{}
+	})
+
+	It("Should find SFC", func() {
+		Expect(onloadUsesSFC(&onloadWithSFC)).To(BeTrue())
+	})
+
+	It("Should not find SFC", func() {
+		Expect(onloadUsesSFC(&onloadWithoutSFC)).To(BeFalse())
 	})
 })
 
@@ -137,7 +191,14 @@ var _ = Describe("Testing using mocked client", func() {
 						"key": "value",
 					},
 					Onload: onloadv1alpha1.OnloadSpec{
-						Version: "foo",
+						KernelMappings: []onloadv1alpha1.OnloadKernelMapping{
+							{
+								KernelModuleImage: "",
+								Regexp:            "",
+							},
+						},
+						UserImage: "image:tag",
+						Version:   "foo",
 					},
 				},
 			}
@@ -154,7 +215,7 @@ var _ = Describe("Testing using mocked client", func() {
 			}
 		})
 
-		It("should label Nodes with kmm label", func() {
+		It("should label Nodes with Onload kmm labels", func() {
 			pods := corev1.PodList{}
 
 			// Listing nodes
@@ -165,17 +226,55 @@ var _ = Describe("Testing using mocked client", func() {
 				Times(1)
 
 			// Listing pods
-			mockClient.EXPECT().
+			listPodsCalls := mockClient.EXPECT().
 				List(gomock.Any(), &corev1.PodList{}, gomock.Any()).
 				SetArg(1, pods).
 				Return(nil).
-				Times(len(nodes.Items)).After(listNodesCall)
+				Times(len(nodes.Items)).
+				After(listNodesCall)
 
 			// Patching nodes to add the label
 			mockClient.EXPECT().
 				Patch(gomock.Any(), &nodes.Items[0], gomock.Any()).
 				Return(nil).
+				Times(1).
+				After(listPodsCalls)
+
+			Expect(r.addKmmLabelsToNodes(ctx, &onload)).Should(Equal(&ctrl.Result{Requeue: true}))
+		})
+
+		It("should label Nodes with Onload and SFC kmm labels", func() {
+			onload.Spec.Onload.KernelMappings[0].SFC = &onloadv1alpha1.SFCSpec{}
+
+			pods := corev1.PodList{}
+
+			// Listing nodes
+			listNodesCall := mockClient.EXPECT().
+				List(gomock.Any(), &corev1.NodeList{}, gomock.Any()).
+				SetArg(1, nodes).
+				Return(nil).
 				Times(1)
+
+			// This can be either "list nodes" or "patch node"
+			previousCall := listNodesCall
+
+			modules := []string{"onload", "sfc"}
+			for range modules {
+				// Listing pods
+				listPodsCalls := mockClient.EXPECT().
+					List(gomock.Any(), &corev1.PodList{}, gomock.Any()).
+					SetArg(1, pods).
+					Return(nil).
+					Times(len(nodes.Items)).
+					After(previousCall)
+
+				// Patching nodes to add the label
+				previousCall = mockClient.EXPECT().
+					Patch(gomock.Any(), &nodes.Items[0], gomock.Any()).
+					Return(nil).
+					Times(1).
+					After(listPodsCalls)
+			}
 
 			Expect(r.addKmmLabelsToNodes(ctx, &onload)).Should(Equal(&ctrl.Result{Requeue: true}))
 		})
@@ -184,7 +283,7 @@ var _ = Describe("Testing using mocked client", func() {
 
 			// Add the kmm label to the second node so that the onload label
 			// will be added
-			nodes.Items[0].Labels[kmmLabelName(onload.Name, onload.Namespace)] = onload.Spec.Onload.Version
+			nodes.Items[0].Labels[kmmOnloadLabelName(onload.Name, onload.Namespace)] = onload.Spec.Onload.Version
 
 			// Add a new node to the list with the kmm label, but with the wrong
 			// value. This node should not be patched.
@@ -192,7 +291,7 @@ var _ = Describe("Testing using mocked client", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
 						"key": "value",
-						kmmLabelName(onload.Name, onload.Namespace): "bar",
+						kmmOnloadLabelName(onload.Name, onload.Namespace): "bar",
 					},
 				},
 			})
@@ -214,7 +313,7 @@ var _ = Describe("Testing using mocked client", func() {
 		})
 
 		It("should remove stale kmm labels from nodes that no longer match the selector", func() {
-			labelKey := kmmLabelName(onload.Name, onload.Namespace)
+			labelKey := kmmOnloadLabelName(onload.Name, onload.Namespace)
 
 			// Add the kmm label to the node, and remove "key" so that it
 			// doesn't match onload.Spec.Selector
@@ -320,7 +419,7 @@ var _ = Describe("Testing using mocked client", func() {
 			mockClient.EXPECT().
 				Patch(gomock.Any(), &node, gomock.Any()).
 				Return(nil).
-				Times(1)
+				Times(2)
 
 			Expect(r.handleNodeUpdate(ctx, &onload, node)).Should(Equal(&ctrl.Result{Requeue: true}))
 		})
@@ -396,7 +495,7 @@ var _ = Describe("onload controller", func() {
 			Expect(k8sClient.Create(ctx, onload)).To(BeNil())
 		})
 
-		It("should create a module", func() {
+		It("should create one Onload module", func() {
 			createdModule := kmm.Module{}
 			moduleName := types.NamespacedName{
 				Name:      onload.Name + "-onload-module",
@@ -406,11 +505,67 @@ var _ = Describe("onload controller", func() {
 			By("creating an onload CR")
 			Expect(k8sClient.Create(ctx, onload)).To(BeNil())
 
-			By("checking for the existence of the module")
+			By("checking for the existence of the Onload module")
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, moduleName, &createdModule)
 				return err == nil
 			}, timeout, pollingInterval).Should(BeTrue())
+
+			By("checking for existence of only one module")
+			Eventually(func() int {
+				var moduleList kmm.ModuleList
+				err := k8sClient.List(ctx, &moduleList, client.InNamespace(onload.Namespace))
+				if err == nil {
+					return len(moduleList.Items)
+				} else {
+					return -1
+				}
+			}, timeout, pollingInterval).Should(Equal(1))
+
+			By("checking the owner references of the module")
+			Expect(createdModule.ObjectMeta.OwnerReferences).
+				To(ContainElement(MatchFields(IgnoreExtras, Fields{
+					"Name": Equal(onload.Name),
+					"UID":  Equal(onload.UID),
+				})))
+		})
+
+		It("should create one Onload and one SFC module", func() {
+			createdModule := kmm.Module{}
+
+			By("creating an onload CR")
+			onload.Spec.Onload.KernelMappings[0].SFC = &onloadv1alpha1.SFCSpec{}
+			Expect(k8sClient.Create(ctx, onload)).To(BeNil())
+
+			By("checking for the existence of each module")
+			moduleName := types.NamespacedName{
+				Name:      onload.Name + "-onload-module",
+				Namespace: onload.Namespace,
+			}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, moduleName, &createdModule)
+				return err == nil
+			}, timeout, pollingInterval).Should(BeTrue())
+
+			moduleName = types.NamespacedName{
+				Name:      onload.Name + "-sfc-module",
+				Namespace: onload.Namespace,
+			}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, moduleName, &createdModule)
+				return err == nil
+			}, timeout, pollingInterval).Should(BeTrue())
+
+			By("checking for existence of only two modules")
+			Eventually(func() int {
+				var moduleList kmm.ModuleList
+				err := k8sClient.List(ctx, &moduleList, client.InNamespace(onload.Namespace))
+				if err == nil {
+					return len(moduleList.Items)
+				} else {
+					return -1
+				}
+			}, timeout, pollingInterval).Should(Equal(2))
 
 			By("checking the owner references of the module")
 			Expect(createdModule.ObjectMeta.OwnerReferences).
@@ -441,44 +596,84 @@ var _ = Describe("onload controller", func() {
 				})))
 		})
 
-		It("should handle the update process", func() {
-			By("creating the onload CR")
-			Expect(k8sClient.Create(ctx, onload)).Should(Succeed())
+		// Test all four combinations of Onload CR upgrade: with/without SFC before/after
+		DescribeTable("Onload upgrade with and without SFC",
+			func(sfcBefore *onloadv1alpha1.SFCSpec, sfcAfter *onloadv1alpha1.SFCSpec) {
+				By("creating the onload CR")
 
-			By("checking the operands")
-			devicePlugin := appsv1.DaemonSet{}
-			devicePluginName := types.NamespacedName{
-				Name:      onload.Name + "-onload-device-plugin-ds",
-				Namespace: onload.Namespace,
-			}
+				// The initial Onload CR doesn't request SFC support
+				onload.Spec.Onload.KernelMappings[0].SFC = sfcBefore
+				Expect(k8sClient.Create(ctx, onload)).Should(Succeed())
 
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, devicePluginName, &devicePlugin)
-				return err == nil
-			}, timeout, pollingInterval).Should(BeTrue())
-
-			Expect(len(devicePlugin.Spec.Template.Spec.InitContainers)).To(Equal(1))
-			Expect(devicePlugin.Spec.Template.Spec.InitContainers[0].Image).To(Equal(onload.Spec.Onload.UserImage))
-
-			By("patching the onload CR definition")
-			oldOnload := onload.DeepCopy()
-			onload.Spec.Onload.UserImage = "image:tag2"
-			onload.Spec.Onload.Version = "upgraded"
-			Expect(len(onload.Spec.Onload.KernelMappings)).To(Equal(1))
-			onload.Spec.Onload.KernelMappings[0].KernelModuleImage = "kernel-image:tag2"
-			k8sClient.Patch(ctx, onload, client.MergeFrom(oldOnload))
-
-			By("re-checking the operands")
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, devicePluginName, &devicePlugin)
-				if err != nil {
-					return false
+				By("checking Onload Device Plugin")
+				devicePlugin := appsv1.DaemonSet{}
+				devicePluginName := types.NamespacedName{
+					Name:      onload.Name + "-onload-device-plugin-ds",
+					Namespace: onload.Namespace,
 				}
-				return devicePlugin.Spec.Template.Spec.InitContainers[0].Image == onload.Spec.Onload.UserImage
-			}, timeout, pollingInterval).Should(BeTrue())
 
-			Expect(len(devicePlugin.Spec.Template.Spec.InitContainers)).To(Equal(1))
-			Expect(devicePlugin.Spec.Template.Spec.InitContainers[0].Image).To(Equal(onload.Spec.Onload.UserImage))
-		})
+				Eventually(func() bool {
+					err := k8sClient.Get(ctx, devicePluginName, &devicePlugin)
+					return err == nil
+				}, timeout, pollingInterval).Should(BeTrue())
+
+				Expect(len(devicePlugin.Spec.Template.Spec.InitContainers)).To(Equal(1))
+				Expect(devicePlugin.Spec.Template.Spec.InitContainers[0].Image).To(Equal(onload.Spec.Onload.UserImage))
+
+				By("patching the onload CR definition")
+				oldOnload := onload.DeepCopy()
+				onload.Spec.Onload.UserImage = "image:tag2"
+				onload.Spec.Onload.Version = "upgraded"
+
+				// The user might have requested SFC support during upgrade
+				onload.Spec.Onload.KernelMappings[0].SFC = sfcAfter
+
+				Expect(len(onload.Spec.Onload.KernelMappings)).To(Equal(1))
+
+				onload.Spec.Onload.KernelMappings[0].KernelModuleImage = "kernel-image:tag2"
+				k8sClient.Patch(ctx, onload, client.MergeFrom(oldOnload))
+
+				By("re-checking Onload Device Plugin")
+				Eventually(func() bool {
+					err := k8sClient.Get(ctx, devicePluginName, &devicePlugin)
+					if err != nil {
+						return false
+					}
+					return devicePlugin.Spec.Template.Spec.InitContainers[0].Image == onload.Spec.Onload.UserImage
+				}, timeout, pollingInterval).Should(BeTrue())
+
+				Expect(len(devicePlugin.Spec.Template.Spec.InitContainers)).To(Equal(1))
+
+				By("checking the SFC module")
+				sfcModule := kmm.Module{}
+				moduleName := types.NamespacedName{
+					Name:      onload.Name + "-sfc-module",
+					Namespace: onload.Namespace,
+				}
+
+				if sfcAfter != nil {
+					Eventually(func() bool {
+						err := k8sClient.Get(ctx, moduleName, &sfcModule)
+						if err != nil {
+							return false
+						}
+						return sfcModule.Spec.ModuleLoader.Container.KernelMappings[0].ContainerImage ==
+							onload.Spec.Onload.KernelMappings[0].KernelModuleImage
+					}, timeout, pollingInterval).Should(BeTrue())
+
+					Expect(sfcModule.Spec.ModuleLoader.Container.Modprobe.ModuleName).
+						Should(Equal("sfc"))
+				} else {
+					Eventually(func() bool {
+						err := k8sClient.Get(ctx, moduleName, &sfcModule)
+						return apierrors.IsNotFound(err)
+					}, timeout, pollingInterval).Should(BeTrue())
+				}
+			},
+			Entry("Upgrade Onload without SFC", nil, nil),
+			Entry("Add SFC during Onload upgrade", nil, &onloadv1alpha1.SFCSpec{}),
+			Entry("Remove SFC during Onload upgrade", &onloadv1alpha1.SFCSpec{}, nil),
+			Entry("Upgrade Onload with SFC", &onloadv1alpha1.SFCSpec{}, &onloadv1alpha1.SFCSpec{}),
+		)
 	})
 })
