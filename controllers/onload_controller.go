@@ -5,6 +5,7 @@ package controllers
 import (
 	"cmp"
 	"context"
+	"fmt"
 	"slices"
 	"time"
 
@@ -106,7 +107,7 @@ func (r *OnloadReconciler) Reconcile(
 		log.Info("Error creating module")
 		return ctrl.Result{}, err
 	} else if res != nil {
-		log.Info("Added Onload Module")
+		log.Info("Added Module(s)")
 		return *res, nil
 	}
 
@@ -143,9 +144,14 @@ func (r *OnloadReconciler) Reconcile(
 
 const kmmModuleLabelPrefix = "kmm.node.kubernetes.io/version-module"
 const onloadModuleNameSuffix = "-onload-module"
+const sfcModuleNameSuffix = "-sfc-module"
 
-func kmmLabelName(name, namespace string) string {
+func kmmOnloadLabelName(name, namespace string) string {
 	return kmmModuleLabelPrefix + "." + namespace + "." + name + onloadModuleNameSuffix
+}
+
+func kmmSFCLabelName(name, namespace string) string {
+	return kmmModuleLabelPrefix + "." + namespace + "." + name + sfcModuleNameSuffix
 }
 
 const onloadLabelPrefix = "onload.amd.com/"
@@ -194,7 +200,12 @@ func (r *OnloadReconciler) deleteLabels(ctx context.Context, namespacedName type
 		return nil
 	}
 
-	err := deleteLabel(kmmLabelName(namespacedName.Name, namespacedName.Namespace))
+	err := deleteLabel(kmmOnloadLabelName(namespacedName.Name, namespacedName.Namespace))
+	if err != nil {
+		return err
+	}
+
+	err = deleteLabel(kmmSFCLabelName(namespacedName.Name, namespacedName.Namespace))
 	if err != nil {
 		return err
 	}
@@ -209,41 +220,73 @@ func (r *OnloadReconciler) deleteLabels(ctx context.Context, namespacedName type
 
 func (r *OnloadReconciler) addKmmLabelsToNodes(ctx context.Context, onload *onloadv1alpha1.Onload) (*ctrl.Result, error) {
 	log := log.FromContext(ctx)
-	kmmPodLabelSet := labels.Set{"kmm.node.kubernetes.io/module.name": onload.Name + onloadModuleNameSuffix}
 
-	labels := labels.FormatLabels(onload.Spec.Selector)
-	labelKey := kmmLabelName(onload.Name, onload.Namespace)
-
-	nodes, err := r.listNodesWithLabels(ctx, labels)
+	// Figure out a list of nodes that match Onload's selector.
+	onloadLabels := labels.FormatLabels(onload.Spec.Selector)
+	nodes, err := r.listNodesWithLabels(ctx, onloadLabels)
 	if err != nil {
 		return nil, err
 	}
 
 	changesMade := false
 
-	for _, node := range nodes.Items {
-		if _, found := node.Labels[labelKey]; !found {
-			// Check that there isn't a lingering module pod.
-			// This can be removed, but without it the upgrade process is more
-			// concurrent (rather than rolling), which leads to more pod
-			// restarts/failures. Both methods work, but this approach maintains
-			// the rolling nature of the update (as much as is possible).
-			pods, err := r.getPodsOnNode(ctx, kmmPodLabelSet, node.Name)
-			if err != nil {
-				return nil, err
-			} else if len(pods) > 0 {
-				log.Info("Lingering Module Pod(s)", "Node", node.Name)
-				return &ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
-			}
+	addKmmLabelToNode := func(node corev1.Node, labelKey string, podLabelSet labels.Set,
+	) (*ctrl.Result, error) {
+		if _, found := node.Labels[labelKey]; found {
+			return nil, nil
+		}
 
-			nodeCopy := node.DeepCopy()
-			node.Labels[labelKey] = onload.Spec.Onload.Version
-			err = r.Patch(ctx, &node, client.MergeFrom(nodeCopy))
-			if err != nil {
-				log.Error(err, "Failed to patch Node with new label")
-				return nil, err
+		// We can only add the SFC label if the Onload label matches
+		// the Onload CR version. Otherwise, we are likely within the
+		// upgrade workflow, where we soon delete old KMM labels and
+		// add new ones, causing the SFC kernel module to reload
+		// unnecessarily.
+		if labelKey != kmmOnloadLabelName(onload.Name, onload.Namespace) &&
+			node.Labels[kmmOnloadLabelName(onload.Name, onload.Namespace)] != onload.Spec.Onload.Version {
+			return nil, nil
+		}
+
+		// Check that there isn't a lingering module pod.
+		// This can be removed, but without it the upgrade process is more
+		// concurrent (rather than rolling), which leads to more pod
+		// restarts/failures. Both methods work, but this approach maintains
+		// the rolling nature of the update (as much as is possible).
+		pods, err := r.getPodsOnNode(ctx, podLabelSet, node.Name)
+		if err != nil {
+			return nil, err
+		} else if len(pods) > 0 {
+			log.Info("Lingering Module Pod(s)", "Node", node.Name)
+			return &ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
+		}
+
+		nodeCopy := node.DeepCopy()
+		node.Labels[labelKey] = onload.Spec.Onload.Version
+		err = r.Patch(ctx, &node, client.MergeFrom(nodeCopy))
+		if err != nil {
+			log.Error(err, "Failed to patch Node with new label")
+			return nil, err
+		}
+		changesMade = true
+		return nil, nil
+	}
+
+	for _, node := range nodes.Items {
+		// Try add Onload labels
+		res, err := addKmmLabelToNode(node,
+			kmmOnloadLabelName(onload.Name, onload.Namespace),
+			labels.Set{"kmm.node.kubernetes.io/module.name": onload.Name + onloadModuleNameSuffix})
+		if res != nil || err != nil {
+			return res, err
+		}
+
+		// Add SFC labels conditionally
+		if onloadUsesSFC(onload) {
+			res, err := addKmmLabelToNode(node,
+				kmmSFCLabelName(onload.Name, onload.Namespace),
+				labels.Set{"kmm.node.kubernetes.io/module.name": onload.Name + sfcModuleNameSuffix})
+			if res != nil || err != nil {
+				return res, err
 			}
-			changesMade = true
 		}
 	}
 
@@ -252,7 +295,13 @@ func (r *OnloadReconciler) addKmmLabelsToNodes(ctx context.Context, onload *onlo
 		return &ctrl.Result{Requeue: true}, nil
 	}
 
-	return r.removeStaleLabels(ctx, onload, labelKey)
+	// Remove stale kmm labels from nodes that don't match the module kind's selector.
+	res, err := r.removeStaleLabels(ctx, onload, kmmOnloadLabelName(onload.Name, onload.Namespace))
+	if res != nil || err != nil {
+		return res, err
+	}
+
+	return r.removeStaleLabels(ctx, onload, kmmSFCLabelName(onload.Name, onload.Namespace))
 }
 
 func (r *OnloadReconciler) addOnloadLabelsToNodes(ctx context.Context, onload *onloadv1alpha1.Onload) (*ctrl.Result, error) {
@@ -260,7 +309,7 @@ func (r *OnloadReconciler) addOnloadLabelsToNodes(ctx context.Context, onload *o
 
 	labels := labels.FormatLabels(onload.Spec.Selector)
 	labelKey := onloadLabelName(onload.Name, onload.Namespace)
-	kmmLabel := kmmLabelName(onload.Name, onload.Namespace)
+	kmmLabel := kmmOnloadLabelName(onload.Name, onload.Namespace)
 	nodes, err := r.listNodesWithLabels(ctx, labels)
 	if err != nil {
 		return nil, err
@@ -340,7 +389,7 @@ func (r *OnloadReconciler) getNodesToUpgrade(ctx context.Context, onload *onload
 	log := log.FromContext(ctx)
 	nodesToUpgrade := []corev1.Node{}
 
-	labelKey := kmmLabelName(onload.Name, onload.Namespace)
+	labelKey := kmmOnloadLabelName(onload.Name, onload.Namespace)
 	nodes, err := r.listNodesWithLabels(ctx, labelKey)
 	if err != nil {
 		log.Error(err, "Failed to list Nodes with kmm label",
@@ -393,36 +442,32 @@ func (r *OnloadReconciler) handleDevicePluginUpdate(ctx context.Context, onload 
 	return &ctrl.Result{Requeue: true}, nil
 }
 
-func (r *OnloadReconciler) handleModuleUpdate(ctx context.Context, onload *onloadv1alpha1.Onload) (*ctrl.Result, error) {
+func (r *OnloadReconciler) patchModule(ctx context.Context, module *kmm.Module,
+	onload *onloadv1alpha1.Onload, getKernelMap kernelMapperFn,
+) (*ctrl.Result, error) {
 	log := log.FromContext(ctx)
-
-	module := &kmm.Module{}
-	err := r.Get(ctx, types.NamespacedName{Name: onload.Name + onloadModuleNameSuffix, Namespace: onload.Namespace}, module)
-	if err != nil {
-		log.Error(err, "Failed to get Onload Module", "Onload", onload)
-		return nil, err
-	}
 
 	if module.Spec.ModuleLoader.Container.Version == onload.Spec.Onload.Version {
 		// Nothing to be done, so return
 		return nil, nil
 	}
 
-	oldModule := module.DeepCopy()
+	kernelMappings := []kmm.KernelMapping{}
 
-	module.Spec.ModuleLoader.Container.Version = onload.Spec.Onload.Version
-
-	for i := range module.Spec.ModuleLoader.Container.KernelMappings {
-		moduleKmap := &module.Spec.ModuleLoader.Container.KernelMappings[i]
-		for _, onloadKmap := range onload.Spec.Onload.KernelMappings {
-			if onloadKmap.Regexp == moduleKmap.Regexp {
-				moduleKmap.ContainerImage = onloadKmap.KernelModuleImage
-				break
-			}
+	for _, kmapSpec := range onload.Spec.Onload.KernelMappings {
+		kmap := getKernelMap(kmapSpec)
+		if kmap == nil {
+			continue
 		}
+
+		kernelMappings = append(kernelMappings, *kmap)
 	}
 
-	err = r.Patch(ctx, module, client.MergeFrom(oldModule))
+	oldModule := module.DeepCopy()
+	module.Spec.ModuleLoader.Container.Version = onload.Spec.Onload.Version
+	module.Spec.ModuleLoader.Container.KernelMappings = kernelMappings
+
+	err := r.Patch(ctx, module, client.MergeFrom(oldModule))
 	if err != nil {
 		log.Error(err, "Failed to patch Module", "Module", module)
 		return nil, err
@@ -430,6 +475,55 @@ func (r *OnloadReconciler) handleModuleUpdate(ctx context.Context, onload *onloa
 
 	log.Info("Updated Module definition for upgrade", "Module", module)
 	return &ctrl.Result{Requeue: true}, nil
+}
+
+func (r *OnloadReconciler) handleModuleUpdate(ctx context.Context, onload *onloadv1alpha1.Onload) (*ctrl.Result, error) {
+	log := log.FromContext(ctx)
+
+	patchOrDeleteModule := func(isUsed bool, moduleName string, getKernelMap kernelMapperFn,
+	) (*ctrl.Result, error) {
+		module := &kmm.Module{}
+		err := r.Get(ctx, types.NamespacedName{Name: moduleName, Namespace: onload.Namespace}, module)
+
+		//
+		// Below are possible module kind-related actions.
+		//
+		// +------------------------+--------+----------+
+		// | Exists \ Should exist? |  Yes   |    No    |
+		// +------------------------+--------+----------+
+		// | Yes                    | Patch  | Delete   |
+		// | No                     | Error* | Continue |
+		// +------------------------+--------+----------+
+		//
+		// (*) Error because the reconciliation loop must check the existence
+		// of the SFC module kind before it reaches this module update code.
+		//
+		if err == nil { // Module kind exists
+			if isUsed {
+				return r.patchModule(ctx, module, onload, getKernelMap)
+			} else {
+				return &ctrl.Result{Requeue: true}, r.Delete(ctx, module)
+			}
+		} else if apierrors.IsNotFound(err) {
+			if isUsed {
+				err := fmt.Errorf("Module %s should exist", moduleName)
+				return nil, err
+			} else {
+				return nil, nil
+			}
+		} else {
+			log.Error(err, "Failed to get Module", "Module", moduleName)
+			return nil, err
+		}
+	}
+
+	// Onload module kind is always used for Onload CR, hence "true".
+	res, err := patchOrDeleteModule(true, onload.Name+onloadModuleNameSuffix, onloadKernelMapper)
+	if res != nil || err != nil {
+		return res, err
+	}
+
+	return patchOrDeleteModule(onloadUsesSFC(onload), onload.Name+sfcModuleNameSuffix, sfcKernelMapper)
 }
 
 func (r *OnloadReconciler) handleNodeUpdate(ctx context.Context, onload *onloadv1alpha1.Onload, node corev1.Node) (*ctrl.Result, error) {
@@ -470,11 +564,17 @@ func (r *OnloadReconciler) handleNodeUpdate(ctx context.Context, onload *onloadv
 		return res, err
 	}
 
-	// Remove kmm label
-	labelName := kmmLabelName(onload.Name, onload.Namespace)
-	err = r.deleteLabelFromNode(ctx, node, labelName)
+	// Remove kmm labels
+	err = r.deleteLabelFromNode(ctx, node, kmmSFCLabelName(onload.Name, onload.Namespace))
 	if err != nil {
-		log.Error(err, "Could not patch node (removing kmm label) Node: "+node.Name)
+		return nil, err
+	}
+
+	// The Onload label must be the last to be removed. Once completed,
+	// the node will be considered upgraded, and the reconciliation loop
+	// will not enter this function again for the given upgrade.
+	err = r.deleteLabelFromNode(ctx, node, kmmOnloadLabelName(onload.Name, onload.Namespace))
+	if err != nil {
 		return nil, err
 	}
 
@@ -603,18 +703,43 @@ func (r *OnloadReconciler) evictOnloadedPods(ctx context.Context, node corev1.No
 	return &ctrl.Result{RequeueAfter: defaultRequeueTime}, nil
 }
 
+type kernelMapperFn func(onloadv1alpha1.OnloadKernelMapping) *kmm.KernelMapping
+
+func onloadKernelMapper(spec onloadv1alpha1.OnloadKernelMapping) *kmm.KernelMapping {
+	return &kmm.KernelMapping{
+		Regexp:         spec.Regexp,
+		ContainerImage: spec.KernelModuleImage,
+	}
+}
+
+func sfcKernelMapper(spec onloadv1alpha1.OnloadKernelMapping) *kmm.KernelMapping {
+	// If the SFC field is not provided, the controller doesn't manage
+	// the SFC kernel module.
+	if spec.SFC == nil {
+		return nil
+	}
+
+	// Otherwise, it reuses the Onload image.
+	return onloadKernelMapper(spec)
+}
+
+// Return true if any of the kernel mappings contain a non-nil SFC field.
+func onloadUsesSFC(onload *onloadv1alpha1.Onload) bool {
+	return slices.ContainsFunc(onload.Spec.Onload.KernelMappings,
+		func(kmap onloadv1alpha1.OnloadKernelMapping) bool {
+			return kmap.SFC != nil
+		})
+}
+
 func (r *OnloadReconciler) createAndAddModules(
 	ctx context.Context,
 	onload *onloadv1alpha1.Onload,
 ) (*ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
-	moduleNames := []string{
-		onload.Name + onloadModuleNameSuffix,
-		// onload.Name + "-sfc-module",
-	}
-
-	for _, moduleName := range moduleNames {
+	createAndAddModule := func(moduleName string,
+		modprobeArg string, inTreeModuleToRemove string, getKernelMap kernelMapperFn,
+	) (*ctrl.Result, error) {
 		module := &kmm.Module{}
 		err := r.Get(
 			ctx,
@@ -624,17 +749,16 @@ func (r *OnloadReconciler) createAndAddModules(
 			},
 			module,
 		)
-
 		if err == nil {
-			continue
+			return nil, nil
 		}
-
 		if !apierrors.IsNotFound(err) {
-			log.Error(err, "Failed to get Onload Module")
+			log.Error(err, "Failed to get Module", "Module", moduleName)
 			return nil, err
 		}
 
-		module, err = createModule(onload, "onload", moduleName)
+		module, err = createModule(onload, moduleName,
+			modprobeArg, inTreeModuleToRemove, getKernelMap)
 		if err != nil {
 			log.Error(err, "createModule failure")
 			return nil, err
@@ -653,7 +777,15 @@ func (r *OnloadReconciler) createAndAddModules(
 		}
 
 		return &ctrl.Result{Requeue: true}, nil
+	}
 
+	res, err := createAndAddModule(onload.Name+onloadModuleNameSuffix, "onload", "", onloadKernelMapper)
+	if res != nil || err != nil {
+		return res, err
+	}
+
+	if onloadUsesSFC(onload) {
+		return createAndAddModule(onload.Name+sfcModuleNameSuffix, "sfc", "sfc", sfcKernelMapper)
 	}
 
 	return nil, nil
@@ -661,18 +793,23 @@ func (r *OnloadReconciler) createAndAddModules(
 
 func createModule(
 	onload *onloadv1alpha1.Onload,
-	modprobeArg string,
 	moduleName string,
+	modprobeArg string, inTreeModuleToRemove string, getKernelMap kernelMapperFn,
 ) (*kmm.Module, error) {
 
 	kernelMappings := []kmm.KernelMapping{}
 
 	for _, kmapSpec := range onload.Spec.Onload.KernelMappings {
-		kmap := kmm.KernelMapping{
-			Regexp:         kmapSpec.Regexp,
-			ContainerImage: kmapSpec.KernelModuleImage,
+		kmap := getKernelMap(kmapSpec)
+
+		// We may not need to create a new Module kind for this mapping,
+		// e.g. if this is SFC and the user has deployed their kernel
+		// module managed outside the controller.
+		if kmap == nil {
+			continue
 		}
-		kernelMappings = append(kernelMappings, kmap)
+
+		kernelMappings = append(kernelMappings, *kmap)
 	}
 
 	module := &kmm.Module{
@@ -688,6 +825,8 @@ func createModule(
 						ModuleName: modprobeArg,
 						Parameters: []string{"--first-time"},
 					},
+					InTreeModuleToRemove: inTreeModuleToRemove,
+
 					KernelMappings:  kernelMappings,
 					ImagePullPolicy: onload.Spec.Onload.ImagePullPolicy,
 					Version:         onload.Spec.Onload.Version,
