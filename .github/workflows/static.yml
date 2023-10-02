@@ -1,0 +1,131 @@
+# SPDX-License-Identifier: MIT
+# (c) Copyright 2023 Advanced Micro Devices, Inc.
+name: "Static Analysis"
+
+on:
+  workflow_dispatch:
+    inputs:
+      lint_codebase:
+        description: Lint all files instead of changed
+        default: false
+        required: true
+        type: boolean
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+#  schedule:
+#    - cron: '44 2 * * 5'
+
+env:
+  lint-all: ${{ github.event_name == 'workflow_dispatch' && inputs.lint_codebase }}
+permissions:
+  contents: read
+jobs:
+  lint-general:
+    name: Super Linter
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # super-linter req
+
+    - name: Super Linter
+      uses: docker://ghcr.io/super-linter/super-linter:slim-v5.3.1 # go-1.21
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # super-linter is designed around linting changed files only,
+        # which is fast. Optionally, lint all files.
+        VALIDATE_ALL_CODEBASE: ${{ env.lint-all }}
+        VALIDATE_GO: false
+        FILTER_REGEX_EXCLUDE: '(.*/ContainerFileNotice|.*_patch\.yaml)'
+        KUBERNETES_KUBECONFORM_OPTIONS: --ignore-missing-schemas
+        IGNORE_GITIGNORED_FILES: true
+        ERROR_ON_MISSING_EXEC_BIT: true
+        LINTER_RULES_PATH: /
+        YAML_CONFIG_FILE: .yamllint.yml
+        GO_LINTER_RULES: .golangci.yml
+
+  # super-linter has issues with go-1.21 & linting of changed go files only
+  lint-go:
+    name: Go Linter
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Go - setup env
+      uses: actions/setup-go@v4
+      with:
+        go-version-file: go.mod
+        cache: false # handled by linter action
+
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: v1.54 # go 1.21
+        only-new-issues: ${{ !env.lint-all }}
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Go - setup env
+      uses: actions/setup-go@v4
+      with:
+        go-version-file: go.mod
+
+    - run: make test
+
+  analyse:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    needs: [ unit-tests, lint-go ] # cost mitigation
+    timeout-minutes: 360
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ go ]
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Go - setup env
+      uses: actions/setup-go@v4
+      with:
+        go-version-file: go.mod
+
+    - name: Go - download dependencies
+      run: go get
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.language }}
+        queries: security-extended,security-and-quality
+
+    - name: Go Build on Operator, Device Plugin, and Worker
+      run: make build device-plugin-build worker-build
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:${{matrix.language}}"
+
