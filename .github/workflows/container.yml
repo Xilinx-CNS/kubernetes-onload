@@ -1,0 +1,139 @@
+# SPDX-License-Identifier: MIT
+# (c) Copyright 2023 Advanced Micro Devices, Inc.
+name: "Container Image"
+
+on:
+  workflow_dispatch:
+    inputs:
+      registry-prefix:
+        description: Registry host and org
+        type: string
+#  push:
+#    branches: [ master ]
+#  pull_request:
+#    branches: [ master ]
+
+env:
+  registry-prefix: ${{ inputs.registry-prefix || format('ghcr.io/{0}', github.repository_owner) }}
+permissions:
+  contents: read
+  packages: write
+jobs:
+  container-build:
+    name: Container Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        app: [Operator, Device Plugin]
+        include:
+          - app: Operator
+            image-repo: onload-operator
+          - app: Device Plugin
+            image-repo: onload-device-plugin
+            dockerfile_prefix: deviceplugin.
+    outputs:
+      digests: ${{ steps.build.outputs.digest }}
+    env:
+      DOCKER_CONFIG: .docker
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Login to registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+
+    - name: Metadata - Docker tagging
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        flavor: |
+          latest=false
+          suffix=-dev
+        images: |
+          ${{ env.registry-prefix }}/${{ matrix.image-repo }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=tag
+          type=ref,event=pr,prefix=pr-
+          type=semver,pattern={{version}}
+          type=sha,prefix=git-,format=short
+
+    - name: Metadata - summarise
+      env:
+        TITLE: ${{ matrix.image-repo }}
+      run: |
+        {
+          echo "# $TITLE"
+          echo '## Metadata output'
+          echo '### Tags'
+          echo '```'
+          echo "$DOCKER_METADATA_OUTPUT_TAGS"
+          echo '```'
+          echo '### Labels'
+          echo '```'
+          echo "$DOCKER_METADATA_OUTPUT_LABELS"
+          echo '```'
+        } >> $GITHUB_STEP_SUMMARY
+
+    - name: Build
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        file: ${{ matrix.dockerfile_prefix }}Dockerfile
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        push: true
+
+    - name: Build - summarise
+      env:
+        IMAGE_REPO: ${{ env.registry-prefix }}/${{ matrix.image-repo }}
+        DIGEST: ${{ steps.build.outputs.digest }}
+        IMAGEID: ${{ steps.build.outputs.imageid }}
+      run: |
+        {
+          echo '## Build output'
+          echo "[\`$IMAGE_REPO\`](https://$IMAGE_REPO)@\`$DIGEST\`"
+          echo "Image ID (Config): \`$IMAGEID\`"
+        } >> $GITHUB_STEP_SUMMARY
+
+    - name: Preflight
+      id: preflight
+      uses: docker://quay.io/opdev/preflight:1.7.0
+      with:
+        args: check container ${{ env.registry-prefix }}/${{ matrix.image-repo }}@${{ steps.build.outputs.digest }} # --submit
+      continue-on-error: true
+      env:
+        PFLT_DOCKERCONFIG: ${{ github.workspace }}/.docker/config.json
+        PFLT_PYXIS_API_TOKEN:
+        PFLT_CERTIFICATION_PROJECT_ID:
+        PFLT_ARTIFACTS: ${{ github.workspace }}/preflight-artifacts
+
+    - name: Preflight - summarise
+      env:
+        DOCKERFILE: ${{ matrix.dockerfile_prefix }}Dockerfile
+      run: |
+        {
+          echo '## Preflight output'
+          echo "For \`$DOCKERFILE\`"
+          echo '### Results'
+          echo '```json'
+          echo """$(cat preflight-artifacts/*/results.json || echo Missing)"""
+          echo '```'
+          echo '### RPM Manifest'
+          echo '```json'
+          echo """$(cat preflight-artifacts/*/rpm-manifest.json || echo Missing)"""
+          echo '```'
+          echo '### Cert Image'
+          echo '```json'
+          echo """$(cat preflight-artifacts/*/cert-image.json || echo Missing)"""
+          echo '```'
+        } >> $GITHUB_STEP_SUMMARY
+        if [ "$(jq .passed preflight-artifacts/*/results.json)" == "false" ]; then
+          echo "::error file=$DOCKERFILE::Preflight failed"
+        fi
