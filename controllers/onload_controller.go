@@ -347,13 +347,6 @@ func (r *OnloadReconciler) addOnloadLabelsToNodes(ctx context.Context, onload *o
 func (r *OnloadReconciler) removeStaleLabels(ctx context.Context, onload *onloadv1alpha1.Onload, labelKey string) (*ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
-	nodes := corev1.NodeList{}
-	kmmSelector, err := labels.Parse(labelKey)
-	if err != nil {
-		log.Error(err, "Failed to parse label into Selector", "label", labelKey)
-		return nil, err
-	}
-
 	onloadLabels := labels.FormatLabels(onload.Spec.Selector)
 	onloadSelector, err := labels.Parse(onloadLabels)
 	if err != nil {
@@ -362,7 +355,11 @@ func (r *OnloadReconciler) removeStaleLabels(ctx context.Context, onload *onload
 		return nil, err
 	}
 
-	r.List(ctx, &nodes, &client.ListOptions{LabelSelector: kmmSelector})
+	nodes, err := r.listNodesWithLabels(ctx, labelKey)
+	if err != nil {
+		log.Error(err, "Failed to list nodes with label", "label", labelKey)
+		return nil, err
+	}
 
 	changesMade := false
 	for _, node := range nodes.Items {
