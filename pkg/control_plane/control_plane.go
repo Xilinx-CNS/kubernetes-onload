@@ -17,7 +17,7 @@ func Configure(
 	// Split the container runtime type from identifier.
 	containerID, found := strings.CutPrefix(containerID, "cri-o://")
 	if !found {
-		return fmt.Errorf("Unsupported container runtime in %s", containerID)
+		return fmt.Errorf("unsupported container runtime in %s", containerID)
 	}
 
 	glog.Info("CRI-O container ID is ", containerID)

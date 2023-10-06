@@ -503,7 +503,7 @@ func (r *OnloadReconciler) handleModuleUpdate(ctx context.Context, onload *onloa
 			}
 		} else if apierrors.IsNotFound(err) {
 			if isUsed {
-				err := fmt.Errorf("Module %s should exist", moduleName)
+				err := fmt.Errorf("module %s should exist", moduleName)
 				return nil, err
 			} else {
 				return nil, nil
