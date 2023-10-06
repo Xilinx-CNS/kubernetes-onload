@@ -8,10 +8,6 @@ import (
 )
 
 const (
-	mockPodNamespace  = "mockPodNamespace"
-	mockPodName       = "mockPodName"
-	mockContainerName = "mockContainerName"
-
 	mockOnloadCPServerPath = "/mock/sbin/onload_cp_server"
 
 	mockCRIOContainerID       = "cri-o://0123456789abcdef"
