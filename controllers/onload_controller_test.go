@@ -279,6 +279,31 @@ var _ = Describe("Testing using mocked client", func() {
 			Expect(r.addKmmLabelsToNodes(ctx, &onload)).Should(Equal(&ctrl.Result{Requeue: true}))
 		})
 
+		It("should not label Nodes with SFC kmm label while Onload is upgrading", func() {
+			// Request the SFC module kind with this Onload CR
+			onload.Spec.Onload.KernelMappings[0].SFC = &onloadv1alpha1.SFCSpec{}
+
+			// Label the node with the KMM Onload label that does not match
+			// the Onload spec's version "foo" to mimic the upgrade scenario
+			nodes.Items[0].Labels[kmmOnloadLabelName(onload.Name, onload.Namespace)] = "bar"
+
+			// Listing nodes thrice: once for the "addition" step,
+			// twice for the "removal" step with removeStaleLabels().
+			mockClient.EXPECT().
+				List(gomock.Any(), &corev1.NodeList{}, gomock.Any()).
+				SetArg(1, nodes).
+				Return(nil).
+				Times(3)
+
+			res, err := r.addKmmLabelsToNodes(ctx, &onload)
+
+			// No reconciliation needed
+			Expect(res).Should(BeNil())
+
+			// No errors either
+			Expect(err).Should(BeNil())
+		})
+
 		It("should label nodes with Onload label", func() {
 
 			// Add the kmm label to the second node so that the onload label
