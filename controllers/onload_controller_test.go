@@ -631,7 +631,7 @@ var _ = Describe("onload controller", func() {
 				Expect(len(onload.Spec.Onload.KernelMappings)).To(Equal(1))
 
 				onload.Spec.Onload.KernelMappings[0].KernelModuleImage = "kernel-image:tag2"
-				k8sClient.Patch(ctx, onload, client.MergeFrom(oldOnload))
+				Expect(k8sClient.Patch(ctx, onload, client.MergeFrom(oldOnload))).Should(Succeed())
 
 				By("re-checking Onload Device Plugin")
 				Eventually(func() bool {
