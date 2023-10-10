@@ -22,7 +22,7 @@ COPY LICENSE /app/LICENSE
 RUN CGO_ENABLED=0 make device-plugin-build worker-build
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.8
-RUN microdnf install lshw
+RUN microdnf install -y lshw-B.02.19.2 && microdnf clean all
 COPY --from=builder /app/bin/onload-device-plugin /app/bin/onload-worker /usr/bin/
 COPY --from=builder /app/LICENSE /licenses/LICENSE
 CMD ["/usr/bin/onload-device-plugin"]
