@@ -33,6 +33,6 @@ FROM registry.access.redhat.com/ubi8/ubi-micro:8.8
 WORKDIR /
 COPY --from=builder /workspace/manager .
 COPY --from=builder /workspace/LICENSE /licenses/LICENSE
-USER 65532:65532
+USER 1001
 
 ENTRYPOINT ["/manager"]
