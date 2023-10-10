@@ -129,7 +129,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
 docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} . --network="host"
+	docker build -t ${IMG} --network="host" .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
@@ -145,7 +145,7 @@ worker-build: ## Build Onload worker app.
 
 .PHONY: device-plugin-docker-build
 device-plugin-docker-build: test ## Build docker image with the manager.
-	docker build -t ${DEVICE_IMG} -f deviceplugin.Dockerfile --network="host"
+	docker build -t ${DEVICE_IMG} -f deviceplugin.Dockerfile --network="host" .
 
 .PHONY: device-plugin-docker-push
 device-plugin-docker-push: test ## Push docker image to the registry.
