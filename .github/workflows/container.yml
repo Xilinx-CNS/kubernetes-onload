@@ -79,7 +79,7 @@ jobs:
           echo '```'
           echo "$DOCKER_METADATA_OUTPUT_LABELS"
           echo '```'
-        } >> $GITHUB_STEP_SUMMARY
+        } >> "$GITHUB_STEP_SUMMARY"
 
     - name: Build
       id: build
@@ -100,7 +100,7 @@ jobs:
           echo '## Build output'
           echo "[\`$IMAGE_REPO\`](https://$IMAGE_REPO)@\`$DIGEST\`"
           echo "Image ID (Config): \`$IMAGEID\`"
-        } >> $GITHUB_STEP_SUMMARY
+        } >> "$GITHUB_STEP_SUMMARY"
 
     - name: Preflight
       id: preflight
@@ -133,7 +133,7 @@ jobs:
           echo '```json'
           echo """$(cat preflight-artifacts/*/cert-image.json || echo Missing)"""
           echo '```'
-        } >> $GITHUB_STEP_SUMMARY
+        } >> "$GITHUB_STEP_SUMMARY"
         if [ "$(jq .passed preflight-artifacts/*/results.json)" == "false" ]; then
           echo "::error file=$DOCKERFILE::Preflight failed"
         fi
