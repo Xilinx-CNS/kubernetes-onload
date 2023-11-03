@@ -1,0 +1,12 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+
+if ! docker inspect "$2" >/dev/null 2>&1; then
+  docker pull "$2" >/dev/null
+fi
+
+case "$1" in
+  --onload-version)
+    docker inspect -f '{{.Config.Labels.version}}' "$2"
+esac

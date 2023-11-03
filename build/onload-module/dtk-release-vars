@@ -1,0 +1,16 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+
+container_id=$(docker create "$2")
+release_json=$(docker cp "$container_id:/etc/driver-toolkit-release.json" - | tar x -O)
+docker rm "$container_id" >/dev/null
+
+case "$1" in
+  --env)
+    echo "$release_json" | jq -r 'to_entries | .[] | .key + "=" + (.value | @sh)' ;;
+  --kernel-version)
+    echo "$release_json" | jq -r .KERNEL_VERSION ;;
+  --json|*)
+    echo "$release_json" ;;
+esac

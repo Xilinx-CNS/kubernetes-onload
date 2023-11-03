@@ -3,4 +3,5 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
 - onload_v1alpha1_onload.yaml
+- onload-module
 #+kubebuilder:scaffold:manifestskustomizesamples
