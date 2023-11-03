@@ -300,3 +300,7 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+.PHONY: onload-module-dtk
+onload-module-dtk:
+	$(MAKE) -C build/onload-module onload-module-dtk

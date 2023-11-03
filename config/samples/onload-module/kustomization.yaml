@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+configMapGenerator:
+- name: onload-module-dockerfile
+  files:
+  - dockerfile=Dockerfile
+- name: onload-module-dtk-only-dockerfile
+  files:
+  - dockerfile=dtk-only.Dockerfile
