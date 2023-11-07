@@ -1,0 +1,10 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+
+declare -r container_id=$(docker create "$1")
+declare -r release_json=$(docker cp "${container_id}:/etc/driver-toolkit-release.json" - | tar x -O)
+
+docker rm "${container_id}" > /dev/null
+
+echo "${release_json}" | jq -r .KERNEL_VERSION
