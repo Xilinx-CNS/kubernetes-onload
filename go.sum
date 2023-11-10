@@ -13,8 +13,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/emicklei/go-restful/v3 v3.10.2 h1:hIovbnmBTLjHXkqEBUz3HGpXZdM7ZrE9fJIZIqlJLqE=
 github.com/emicklei/go-restful/v3 v3.10.2/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
-github.com/evanphx/json-patch v5.6.0+incompatible h1:jBYDEEiFBPxA0v50tFdvOzQQTCvpL6mnFh5mB2/l16U=
-github.com/evanphx/json-patch v5.6.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
+github.com/evanphx/json-patch v4.12.0+incompatible h1:4onqiflcdA9EOZ4RxV643DvftH5pOlLGNtQ5lPWQu84=
+github.com/evanphx/json-patch v4.12.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/evanphx/json-patch/v5 v5.6.0 h1:b91NhWfaz02IuVxO9faSllyAtNXHMPkC5J8sJCLunww=
 github.com/evanphx/json-patch/v5 v5.6.0/go.mod h1:G79N1coSVB93tBe7j6PhzjmR3/2VvlbKOFpnXhI9Bw4=
 github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=
@@ -222,8 +222,8 @@ k8s.io/apiextensions-apiserver v0.27.2 h1:iwhyoeS4xj9Y7v8YExhUwbVuBhMr3Q4bd/laCl
 k8s.io/apiextensions-apiserver v0.27.2/go.mod h1:Oz9UdvGguL3ULgRdY9QMUzL2RZImotgxvGjdWRq6ZXQ=
 k8s.io/apimachinery v0.28.3 h1:B1wYx8txOaCQG0HmYF6nbpU8dg6HvA06x5tEffvOe7A=
 k8s.io/apimachinery v0.28.3/go.mod h1:uQTKmIqs+rAYaq+DFaoD2X7pcjLOqbQX2AOiO0nIpb8=
-k8s.io/client-go v0.28.1 h1:pRhMzB8HyLfVwpngWKE8hDcXRqifh1ga2Z/PU9SXVK8=
-k8s.io/client-go v0.28.1/go.mod h1:pEZA3FqOsVkCc07pFVzK076R+P/eXqsgx5zuuRWukNE=
+k8s.io/client-go v0.28.3 h1:2OqNb72ZuTZPKCl+4gTKvqao0AMOl9f3o2ijbAj3LI4=
+k8s.io/client-go v0.28.3/go.mod h1:LTykbBp9gsA7SwqirlCXBWtK0guzfhpoW4qSm7i9dxo=
 k8s.io/component-base v0.28.0 h1:HQKy1enJrOeJlTlN4a6dU09wtmXaUvThC0irImfqyxI=
 k8s.io/component-base v0.28.0/go.mod h1:Yyf3+ZypLfMydVzuLBqJ5V7Kx6WwDr/5cN+dFjw1FNk=
 k8s.io/klog/v2 v2.100.1 h1:7WCHKK6K8fNhTqfBhISHQ97KrnJNFZMcQvKp7gP/tmg=
