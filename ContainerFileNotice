@@ -39,7 +39,7 @@ packages subject to the licenses identified below:
 |-------------------------------------------------------------+--------------+------------------------------------------------------------------------------------------|
 | golang, 1.21                                                | BSD-3-Clause | https://github.com/docker-library/golang/blob/585c8c1/LICENSE                            |
 |-------------------------------------------------------------+--------------+------------------------------------------------------------------------------------------|
-| Red Hat Universal Basic Image, 8                            | UBI EULA     | https://www.redhat.com/licenses/EULA_Red_Hat_Universal_Base_Image_English_20190422.pdff  |
+| Red Hat Universal Basic Image, 8 and 9                      | UBI EULA     | https://www.redhat.com/licenses/EULA_Red_Hat_Universal_Base_Image_English_20190422.pdf   |
 |                                                             | + Various    |                                                                                          |
 |-------------------------------------------------------------+--------------+------------------------------------------------------------------------------------------|
 | github.com/golang/glog, v1.1.2                              | Apache-2.0   | https://github.com/golang/glog/blob/v1.1.2/LICENSE                                       |
