@@ -1,6 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: gomod
+    open-pull-requests-limit: 0 # security only
     directory: /
     schedule:
       interval: daily
@@ -8,6 +9,7 @@ updates:
       prefix: cleanup
 
   - package-ecosystem: docker
+    open-pull-requests-limit: 0 # security only
     directory: /
     schedule:
       interval: daily
@@ -15,6 +17,7 @@ updates:
       prefix: cleanup
 
   - package-ecosystem: github-actions
+    open-pull-requests-limit: 0 # security only
     directory: /
     schedule:
       interval: daily
