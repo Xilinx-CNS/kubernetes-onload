@@ -29,7 +29,7 @@ COPY LICENSE LICENSE
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager main.go
 
 # Use UBI as the base image as suggested by the opdev/preflight certification utility.
-FROM registry.access.redhat.com/ubi8/ubi-micro:8.8
+FROM registry.access.redhat.com/ubi8/ubi-micro:8.9
 WORKDIR /
 COPY --from=builder /workspace/manager .
 COPY --from=builder /workspace/LICENSE /licenses/LICENSE
