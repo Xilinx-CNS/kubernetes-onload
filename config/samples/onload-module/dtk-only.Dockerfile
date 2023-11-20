@@ -13,7 +13,12 @@ ARG ONLOAD_BUILD_PARAMS
 ARG KERNEL_FULL_VERSION
 COPY --from=onload-source / /opt/onload
 WORKDIR /opt/onload
-ENV i_prefix=/opt
-RUN scripts/onload_build --kernel --kernelver $KERNEL_FULL_VERSION $ONLOAD_BUILD_PARAMS && \
-    scripts/onload_install --nobuild --kernelfiles --kernelver $KERNEL_FULL_VERSION && \
-    /sbin/depmod -b /opt $KERNEL_FULL_VERSION
+RUN scripts/onload_build --kernel --kernelver $KERNEL_FULL_VERSION $ONLOAD_BUILD_PARAMS
+RUN scripts/onload_install --nobuild --kernelfiles --kernelver $KERNEL_FULL_VERSION
+RUN depmod $KERNEL_FULL_VERSION
+
+
+RUN mkdir -p /opt/lib/modules/$KERNEL_FULL_VERSION
+RUN cp -v /lib/modules/$KERNEL_FULL_VERSION/modules* /opt/lib/modules/$KERNEL_FULL_VERSION/
+RUN cp -rv /lib/modules/$KERNEL_FULL_VERSION/extra /opt/lib/modules/$KERNEL_FULL_VERSION/extra
+RUN ln -s /lib/modules/$KERNEL_FULL_VERSION/kernel /opt/lib/modules/$KERNEL_FULL_VERSION/kernel
