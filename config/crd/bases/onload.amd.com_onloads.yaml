@@ -65,6 +65,43 @@ spec:
                       are heterogenous kernel versions on the nodes in the cluster.
                     items:
                       properties:
+                        build:
+                          description: Build specifies the parameters that are to
+                            be passed to the Kernel Module Management operator when
+                            building the images that contain the module. The build
+                            process creates a new image which will be written to the
+                            location specified by the `KernelModuleImage` parameter.
+                            If empty no builds will take place.
+                          properties:
+                            buildArgs:
+                              description: BuildArgs is an array of build variables
+                                that are provided to the image building backend.
+                              items:
+                                description: BuildArg represents a build argument
+                                  used when building a container image.
+                                properties:
+                                  name:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - name
+                                - value
+                                type: object
+                              type: array
+                            dockerfileConfigMap:
+                              description: ConfigMap that holds Dockerfile contents
+                              properties:
+                                name:
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind,
+                                    uid?'
+                                  type: string
+                              type: object
+                              x-kubernetes-map-type: atomic
+                          required:
+                          - dockerfileConfigMap
+                          type: object
                         kernelModuleImage:
                           description: KernelModuleImage is the image that contains
                             the out-of-tree kernel modules used by Onload.

@@ -703,9 +703,26 @@ func (r *OnloadReconciler) evictOnloadedPods(ctx context.Context, node corev1.No
 type kernelMapperFn func(onloadv1alpha1.OnloadKernelMapping) *kmm.KernelMapping
 
 func onloadKernelMapper(spec onloadv1alpha1.OnloadKernelMapping) *kmm.KernelMapping {
+
+	var buildSpec *kmm.Build = nil
+	if spec.Build != nil {
+		buildSpec = &kmm.Build{
+			BuildArgs:           make([]kmm.BuildArg, 0),
+			DockerfileConfigMap: spec.Build.DockerfileConfigMap,
+		}
+		for _, buildArg := range spec.Build.BuildArgs {
+			arg := kmm.BuildArg{
+				Name:  buildArg.Name,
+				Value: buildArg.Value,
+			}
+			buildSpec.BuildArgs = append(buildSpec.BuildArgs, arg)
+		}
+	}
+
 	return &kmm.KernelMapping{
 		Regexp:         spec.Regexp,
 		ContainerImage: spec.KernelModuleImage,
+		Build:          buildSpec,
 	}
 }
 
@@ -717,7 +734,10 @@ func sfcKernelMapper(spec onloadv1alpha1.OnloadKernelMapping) *kmm.KernelMapping
 	}
 
 	// Otherwise, it reuses the Onload image.
-	return onloadKernelMapper(spec)
+	kmap := onloadKernelMapper(spec)
+
+	kmap.Build = nil
+	return kmap
 }
 
 // Return true if any of the kernel mappings contain a non-nil SFC field.
