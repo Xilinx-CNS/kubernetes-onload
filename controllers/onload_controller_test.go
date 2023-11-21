@@ -4,6 +4,7 @@ package controllers
 
 import (
 	"errors"
+	"strconv"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -105,6 +106,94 @@ var _ = Describe("Testing onloadUsesSFC predicate", func() {
 
 	It("Should not find SFC", func() {
 		Expect(onloadUsesSFC(&onloadWithoutSFC)).To(BeFalse())
+	})
+})
+
+var _ = Describe("Testing kernelmapping conversion functions", func() {
+	var (
+		onloadKmap  onloadv1alpha1.OnloadKernelMapping
+		onloadBuild onloadv1alpha1.OnloadKernelBuild
+	)
+
+	BeforeEach(func() {
+		onloadKmap = onloadv1alpha1.OnloadKernelMapping{
+			KernelModuleImage: "image:label",
+			Regexp:            "",
+		}
+
+		onloadBuild = onloadv1alpha1.OnloadKernelBuild{
+			DockerfileConfigMap: &corev1.LocalObjectReference{Name: "foo"},
+		}
+	})
+
+	It("should map as expected for onloadKernelMapper", func() {
+		Expect(onloadKernelMapper(onloadKmap)).Should(PointTo(
+			MatchFields(IgnoreExtras, Fields{
+				"Regexp":         Equal(onloadKmap.Regexp),
+				"ContainerImage": Equal(onloadKmap.KernelModuleImage),
+			})),
+		)
+	})
+
+	It("shouldn't map anything for sfcKernelMapper with an empty sfc field", func() {
+		Expect(sfcKernelMapper(onloadKmap)).Should(BeNil())
+	})
+
+	It("should map as expected for sfcKernelMapper with a set sfc field", func() {
+		onloadKmap.SFC = &onloadv1alpha1.SFCSpec{}
+		Expect(sfcKernelMapper(onloadKmap)).Should(PointTo(
+			MatchFields(IgnoreExtras, Fields{
+				"Regexp":         Equal(onloadKmap.Regexp),
+				"ContainerImage": Equal(onloadKmap.KernelModuleImage),
+			})),
+		)
+	})
+
+	It("should map the build parameters in onloadKernelMapper", func() {
+		onloadKmap.Build = &onloadBuild
+
+		kmmKmap := onloadKernelMapper(onloadKmap)
+
+		Expect(kmmKmap).ShouldNot(BeNil())
+		Expect(kmmKmap.Build).Should(PointTo(MatchFields(IgnoreExtras, Fields{
+			"DockerfileConfigMap": Equal(onloadKmap.Build.DockerfileConfigMap),
+		})))
+	})
+
+	It("should map the build args in onloadKernelMapper", func() {
+
+		buildArgs := []onloadv1alpha1.BuildArg{
+			{Name: "A", Value: "1"},
+			{Name: "B", Value: "2"},
+			{Name: "C", Value: "3"},
+		}
+		onloadBuild.BuildArgs = buildArgs
+		onloadKmap.Build = &onloadBuild
+
+		kmmKmap := onloadKernelMapper(onloadKmap)
+
+		idFn := func(index int, _ interface{}) string {
+			return strconv.Itoa(index)
+		}
+
+		Expect(kmmKmap).ShouldNot(BeNil())
+		Expect(kmmKmap.Build).Should(PointTo(MatchFields(IgnoreExtras, Fields{
+			"DockerfileConfigMap": Equal(onloadKmap.Build.DockerfileConfigMap),
+			"BuildArgs": MatchAllElementsWithIndex(idFn, Elements{
+				"0": Equal(kmm.BuildArg(buildArgs[0])),
+				"1": Equal(kmm.BuildArg(buildArgs[1])),
+				"2": Equal(kmm.BuildArg(buildArgs[2])),
+			}),
+		})))
+	})
+
+	It("shouldn't map the build parameters in sfcKernelMapper", func() {
+		onloadKmap.Build = &onloadBuild
+		onloadKmap.SFC = &onloadv1alpha1.SFCSpec{}
+		kmmKmap := sfcKernelMapper(onloadKmap)
+
+		Expect(kmmKmap).ShouldNot(BeNil())
+		Expect(kmmKmap.Build).Should(BeNil())
 	})
 })
 
