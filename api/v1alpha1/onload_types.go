@@ -14,6 +14,23 @@ import (
 type SFCSpec struct {
 }
 
+// BuildArg represents a build argument used when building a container image.
+type BuildArg struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// Build is a subset of the build options presented by the Kernel Module
+// Management operator.
+type OnloadKernelBuild struct {
+	// +optional
+	// BuildArgs is an array of build variables that are provided to the image building backend.
+	BuildArgs []BuildArg `json:"buildArgs"`
+
+	// ConfigMap that holds Dockerfile contents
+	DockerfileConfigMap *v1.LocalObjectReference `json:"dockerfileConfigMap"`
+}
+
 type OnloadKernelMapping struct {
 	// Regexp is a regular expression that is used to match against the kernel
 	// versions of the nodes in the cluster
@@ -27,6 +44,14 @@ type OnloadKernelMapping struct {
 	// SFC optionally specifies that the controller will manage the SFC
 	// kernel module.
 	SFC *SFCSpec `json:"sfc,omitempty"`
+
+	// +optional
+	// Build specifies the parameters that are to be passed to the Kernel Module
+	// Management operator when building the images that contain the module.
+	// The build process creates a new image which will be written to the
+	// location specified by the `KernelModuleImage` parameter.
+	// If empty no builds will take place.
+	Build *OnloadKernelBuild `json:"build,omitempty"`
 }
 
 // OnloadSpec defines the desired state of Onload
