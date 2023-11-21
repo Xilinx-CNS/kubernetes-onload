@@ -18,7 +18,5 @@ RUN scripts/onload_install --nobuild --kernelfiles --kernelver $KERNEL_FULL_VERS
 RUN depmod $KERNEL_FULL_VERSION
 
 
-RUN mkdir -p /opt/lib/modules/$KERNEL_FULL_VERSION
-RUN cp -v /lib/modules/$KERNEL_FULL_VERSION/modules* /opt/lib/modules/$KERNEL_FULL_VERSION/
-RUN cp -rv /lib/modules/$KERNEL_FULL_VERSION/extra /opt/lib/modules/$KERNEL_FULL_VERSION/extra
-RUN ln -s /lib/modules/$KERNEL_FULL_VERSION/kernel /opt/lib/modules/$KERNEL_FULL_VERSION/kernel
+RUN mkdir -p /opt/lib/modules
+RUN ln -s /lib/modules/$KERNEL_FULL_VERSION /opt/lib/modules/$KERNEL_FULL_VERSION
