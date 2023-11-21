@@ -7,6 +7,7 @@ require (
 	github.com/kubernetes-sigs/kernel-module-management v1.1.0
 	github.com/onsi/ginkgo/v2 v2.13.1
 	github.com/onsi/gomega v1.30.0
+	github.com/rh-ecosystem-edge/kernel-module-management v0.0.0-20231024110254-591541ea5a45
 	go.uber.org/mock v0.3.0
 	google.golang.org/grpc v1.59.0
 	k8s.io/api v0.28.3
@@ -53,7 +54,6 @@ require (
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.10.1 // indirect
-	github.com/rh-ecosystem-edge/kernel-module-management v0.0.0-20231024110254-591541ea5a45 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.25.0 // indirect
