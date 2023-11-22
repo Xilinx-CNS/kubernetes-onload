@@ -40,7 +40,9 @@ func (manager *NicManager) GetDeviceFiles() []*pluginapi.DeviceSpec {
 }
 
 // NewNicManager allocates and initialises a new NicManager
-func NewNicManager(maxPods int, usePreload, needNic bool) (*NicManager, error) {
+func NewNicManager(maxPods int,
+	usePreload, mountOnload, needNic bool,
+) (*NicManager, error) {
 	nics, err := queryNics()
 	if err != nil {
 		return nil, err
@@ -54,7 +56,12 @@ func NewNicManager(maxPods int, usePreload, needNic bool) (*NicManager, error) {
 	}
 	manager.envs = make(map[string]string)
 	manager.initDevices()
-	manager.initMounts(usePreload)
+
+	if usePreload && mountOnload {
+		return nil, errors.New("setting both usePreload and mountOnload is not supported")
+	}
+
+	manager.initMounts(usePreload, mountOnload)
 
 	manager.rpcServer = NewRPCServer(manager)
 	return manager, nil
