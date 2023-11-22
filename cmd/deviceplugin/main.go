@@ -13,6 +13,8 @@ import (
 func main() {
 	maxPodsPerNodePtr := flag.Int("maxPods", 100,
 		"Number of Onload resources to advertise on each node")
+	needNicPtr := flag.Bool("needNic", true,
+		"Should the Device Plugin fail if no compatible nics are found")
 
 	flag.Parse()
 	err := flag.Lookup("logtostderr").Value.Set("true")
@@ -20,7 +22,7 @@ func main() {
 		glog.Fatalf("Failed to initialise device plugin: %v", err)
 	}
 	glog.Info("Starting device plugin")
-	manager, err := deviceplugin.NewNicManager(*maxPodsPerNodePtr)
+	manager, err := deviceplugin.NewNicManager(*maxPodsPerNodePtr, *needNicPtr)
 	if err != nil {
 		glog.Fatalf("Failed to initialise device plugin: %v", err)
 	}
