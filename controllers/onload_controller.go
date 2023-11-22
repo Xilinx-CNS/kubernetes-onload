@@ -907,6 +907,11 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 			fmt.Sprintf("-maxPods=%d", *onload.Spec.DevicePlugin.MaxPodsPerNode))
 	}
 
+	if onload.Spec.DevicePlugin.SetPreload != nil {
+		devicePluginArgs = append(devicePluginArgs,
+			fmt.Sprintf("-setPreload=%t", *onload.Spec.DevicePlugin.SetPreload))
+	}
+
 	if len(devicePluginArgs) > 0 {
 		devicePluginContainer.Args = devicePluginArgs
 	}

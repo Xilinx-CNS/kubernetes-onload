@@ -55,3 +55,5 @@ spec:
     imagePullPolicy: Always
     # Limit number of pods that can request Onload on a node
     #maxPodsPerNode: 100
+    # Uncomment to select whether LD_PRELOAD should be set by the device plugin
+    # preload: true
