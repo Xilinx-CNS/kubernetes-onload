@@ -110,13 +110,13 @@ Appropriate MachineConfig can be generated with the following commands.
 For users of Openshift v4.10.0-4.13.0:
 
 ```text
- make sfc-mc-docker-build IMG=$REGISTRY_URL TAG=onload-module:$ONLOAD_VERSION-$ONLOAD_KERNEL_VERSION
+ make sfc-mc-docker-build IMG=$REGISTRY_URL/onload-module:$ONLOAD_VERSION-$ONLOAD_KERNEL_VERSION
 ```
 
 For users of OpenShift v4.14.0+:
 
 ```text
- make sfc-mc-docker-build IMG=$REGISTRY_URL TAG=onload-module:$ONLOAD_VERSION-$ONLOAD_KERNEL_VERSION OPENSHIFT_VER=4.14.0
+ make sfc-mc-docker-build IMG=$REGISTRY_URL/onload-module:$ONLOAD_VERSION-$ONLOAD_KERNEL_VERSION OPENSHIFT_VER=4.14.0
 ```
 
 ### Deploying the SFC MachineConfig
