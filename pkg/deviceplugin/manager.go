@@ -3,6 +3,7 @@
 package deviceplugin
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"sync"
@@ -39,10 +40,13 @@ func (manager *NicManager) GetDeviceFiles() []*pluginapi.DeviceSpec {
 }
 
 // NewNicManager allocates and initialises a new NicManager
-func NewNicManager(maxPods int) (*NicManager, error) {
+func NewNicManager(maxPods int, needNic bool) (*NicManager, error) {
 	nics, err := queryNics()
 	if err != nil {
 		return nil, err
+	}
+	if len(nics) == 0 && needNic {
+		return nil, errors.New("no sfc devices found")
 	}
 	manager := &NicManager{
 		interfaces:     nics,
@@ -60,9 +64,6 @@ func NewNicManager(maxPods int) (*NicManager, error) {
 func (manager *NicManager) initDevices() {
 	manager.devices = []*pluginapi.Device{}
 	fmt.Println(manager.interfaces)
-	if len(manager.interfaces) == 0 {
-		return
-	}
 	for i := 0; i < manager.maxPodsPerNode; i++ {
 		name := fmt.Sprintf("sfc-%v", i)
 		device := &pluginapi.Device{
@@ -77,7 +78,7 @@ func (manager *NicManager) initDevices() {
 func (manager *NicManager) CheckNics() {
 	interfaces, err := queryNics()
 	if err != nil {
-		glog.Fatal("No sfc nics found")
+		glog.Fatalf("Failed to query nics (%v)", err)
 	}
 	if !reflect.DeepEqual(interfaces, manager.interfaces) {
 		glog.Fatalf("SFC interfaces on host have changed (%s -> %s)",

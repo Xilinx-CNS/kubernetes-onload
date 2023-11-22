@@ -3,7 +3,6 @@
 package deviceplugin
 
 import (
-	"errors"
 	"os"
 	"os/exec"
 	"regexp"
@@ -64,11 +63,9 @@ func queryNics() ([]string, error) {
 	output := string(bytes)
 	if err != nil {
 		glog.Error(output)
-		glog.Fatalf("error while listing sfc devices : %v", err)
+		glog.Errorf("error while listing sfc devices : %v", err)
+		return nil, err
 	}
 	interfaces := parseOutput(output)
-	if len(interfaces) == 0 {
-		return nil, errors.New("no sfc devices found")
-	}
 	return interfaces, nil
 }
