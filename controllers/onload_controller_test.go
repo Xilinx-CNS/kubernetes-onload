@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/utils/ptr"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -789,5 +790,51 @@ var _ = Describe("onload controller", func() {
 			Entry("Remove SFC during Onload upgrade", &onloadv1alpha1.SFCSpec{}, nil),
 			Entry("Upgrade Onload with SFC", &onloadv1alpha1.SFCSpec{}, &onloadv1alpha1.SFCSpec{}),
 		)
+
+		Describe("Testing Device Plugin options", func() {
+			It("shouldn't add anything when empty", func() {
+				devicePlugin := appsv1.DaemonSet{}
+				devicePluginName := types.NamespacedName{
+					Name:      onload.Name + "-onload-device-plugin-ds",
+					Namespace: onload.Namespace,
+				}
+
+				Expect(k8sClient.Create(ctx, onload)).To(BeNil())
+
+				Eventually(func() bool {
+					err := k8sClient.Get(ctx, devicePluginName, &devicePlugin)
+					return err == nil
+				}, timeout, pollingInterval).Should(BeTrue())
+
+				Expect(devicePlugin.Spec.Template.Spec.Containers).Should(
+					ContainElement(MatchFields(IgnoreExtras, Fields{
+						"Args": BeEmpty(),
+					})),
+				)
+			})
+
+			It("should pass the value of maxPodsPerNode through", func() {
+				devicePlugin := appsv1.DaemonSet{}
+				devicePluginName := types.NamespacedName{
+					Name:      onload.Name + "-onload-device-plugin-ds",
+					Namespace: onload.Namespace,
+				}
+
+				onload.Spec.DevicePlugin.MaxPodsPerNode = ptr.To(1)
+				Expect(k8sClient.Create(ctx, onload)).To(BeNil())
+
+				Eventually(func() bool {
+					err := k8sClient.Get(ctx, devicePluginName, &devicePlugin)
+					return err == nil
+				}, timeout, pollingInterval).Should(BeTrue())
+
+				Expect(devicePlugin.Spec.Template.Spec.Containers).Should(
+					ContainElement(MatchFields(IgnoreExtras, Fields{
+						"Args": ContainElement(Equal("-maxPods=1")),
+					})),
+				)
+			})
+
+		})
 	})
 })
