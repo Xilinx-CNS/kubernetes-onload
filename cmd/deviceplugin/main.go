@@ -17,6 +17,8 @@ func main() {
 		"Should the Device Plugin fail if no compatible nics are found")
 	ldPreloadPtr := flag.Bool("setPreload", true,
 		"Should the device plugin set the LD_PRELOAD environment variable in the pod")
+	mountOnloadPtr := flag.Bool("mountOnload", false,
+		"Should the device plugin mount the onload script into the pod")
 	flag.Parse()
 	err := flag.Lookup("logtostderr").Value.Set("true")
 	if err != nil {
@@ -26,6 +28,7 @@ func main() {
 	manager, err := deviceplugin.NewNicManager(
 		*maxPodsPerNodePtr,
 		*ldPreloadPtr,
+		*mountOnloadPtr,
 		*needNicPtr)
 	if err != nil {
 		glog.Fatalf("Failed to initialise device plugin: %v", err)

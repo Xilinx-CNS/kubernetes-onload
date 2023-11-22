@@ -14,7 +14,9 @@ import (
 const (
 	hostPathPrefix = "/opt/onload"
 	lib64path      = "/usr/lib64"
+	usrBinPath     = "/usr/bin"
 	destLibDir     = "/opt/onload"
+	destDirBase    = ""
 )
 
 // deviceMounts are the device nodes required to run onload in a pod
@@ -28,6 +30,12 @@ var deviceMounts = []string{
 var libraryMounts = []string{
 	"libonload.so",
 	"libonload_ext.so",
+}
+
+// fileMounts are the files to be mounted if the user wants to use onload as a
+// script (not using LD_PRELOAD)
+var fileMounts = []string{
+	"onload",
 }
 
 // addDeviceMount arranges for this device file to be mounted inside containers
@@ -93,7 +101,7 @@ func (manager *NicManager) addLibraryMounts(baseFilename string) error {
 }
 
 // Initialises the set of host files to mount in each container
-func (manager *NicManager) initMounts(usePreload bool) {
+func (manager *NicManager) initMounts(usePreload, mountOnload bool) {
 	manager.deviceFiles = []*pluginapi.DeviceSpec{}
 
 	for _, path := range deviceMounts {
@@ -104,6 +112,15 @@ func (manager *NicManager) initMounts(usePreload bool) {
 		err := manager.addLibraryMounts(path)
 		if err != nil {
 			glog.Warningf("Failed to add library mount for %s (%v)", path, err)
+		}
+	}
+
+	if mountOnload {
+		for _, file := range fileMounts {
+			manager.addFileMount(
+				path.Join(hostPathPrefix, usrBinPath, file),
+				path.Join(destDirBase, usrBinPath, file),
+			)
 		}
 	}
 
