@@ -92,6 +92,44 @@ type DevicePluginSpec struct {
 	// each node.
 	// +kubebuilder:default:=100
 	MaxPodsPerNode *int `json:"maxPodsPerNode,omitempty"`
+
+	// +optional
+	// Preload determines whether the Onload Device Plugin will set LD_PRELOAD
+	// for pods using Onload.
+	// +kubebuilder:default:=true
+	SetPreload *bool `json:"setPreload,omitempty"`
+
+	// +optional
+	// MountOnload is used by the Onload Device Plugin to decide whether to
+	// mount the "onload" script as a file in the container's file system.
+	// "onload" is mount at "/usr/bin/onload"
+	// Mutually exclusive with Preload
+	// +kubebuilder:default:=false
+	MountOnload *bool `json:"mountOnload,omitempty"`
+
+	// +optional
+	// HostOnloadPath is the base location of onload files on the host
+	// filesystem.
+	// +kubebuilder:default=/opt/onload/
+	HostOnloadPath *string `json:"hostOnloadPath,omitempty"`
+
+	// +optional
+	// BaseMountPath is a prefix to be applied to all onload file mounts in the
+	// container's file system.
+	// +kubebuilder:default=/opt/onload
+	BaseMountPath *string `json:"baseMountPath,omitempty"`
+
+	// +optional
+	// BinMountPath is the location to mount onload binaries in the container's
+	// file system.
+	// +kubebuilder:default=/usr/bin
+	BinMountPath *string `json:"binMountPath,omitempty"`
+
+	// +optional
+	// LibMountPath is the location to mount onload libraries in the container's
+	// file system.
+	// +kubebuilder:default=/usr/lib64
+	LibMountPath *string `json:"libMounthPath,omitempty"`
 }
 
 // Spec is the top-level specification for onload and related products that are

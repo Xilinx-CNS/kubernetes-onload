@@ -4,6 +4,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -791,12 +792,17 @@ var _ = Describe("onload controller", func() {
 			Entry("Upgrade Onload with SFC", &onloadv1alpha1.SFCSpec{}, &onloadv1alpha1.SFCSpec{}),
 		)
 
-		Describe("Testing Device Plugin options", func() {
-			It("shouldn't add anything when empty", func() {
+		DescribeTable("Testing Device Plugin options",
+			func(dev *onloadv1alpha1.DevicePluginSpec) {
 				devicePlugin := appsv1.DaemonSet{}
 				devicePluginName := types.NamespacedName{
 					Name:      onload.Name + "-onload-device-plugin-ds",
 					Namespace: onload.Namespace,
+				}
+
+				if dev != nil {
+					dev.DevicePluginImage = "image:tag"
+					onload.Spec.DevicePlugin = *dev
 				}
 
 				Expect(k8sClient.Create(ctx, onload)).To(BeNil())
@@ -811,30 +817,30 @@ var _ = Describe("onload controller", func() {
 						"Args": BeEmpty(),
 					})),
 				)
-			})
-
-			It("should pass the value of maxPodsPerNode through", func() {
-				devicePlugin := appsv1.DaemonSet{}
-				devicePluginName := types.NamespacedName{
-					Name:      onload.Name + "-onload-device-plugin-ds",
-					Namespace: onload.Namespace,
+				if dev != nil {
+					if dev.MaxPodsPerNode != nil {
+						Expect(devicePlugin.Spec.Template.Spec.Containers).Should(
+							ContainElement(MatchFields(IgnoreExtras, Fields{
+								"Args": ContainElement(Equal(fmt.Sprintf("-maxPods=%d", *dev.MaxPodsPerNode))),
+							})),
+						)
+					}
+					if dev.SetPreload != nil {
+						Expect(devicePlugin.Spec.Template.Spec.Containers).Should(
+							ContainElement(MatchFields(IgnoreExtras, Fields{
+								"Args": ContainElement(Equal(fmt.Sprintf("-setPreload=%t", *dev.SetPreload))),
+							})),
+						)
+					}
 				}
-
-				onload.Spec.DevicePlugin.MaxPodsPerNode = ptr.To(1)
-				Expect(k8sClient.Create(ctx, onload)).To(BeNil())
-
-				Eventually(func() bool {
-					err := k8sClient.Get(ctx, devicePluginName, &devicePlugin)
-					return err == nil
-				}, timeout, pollingInterval).Should(BeTrue())
-
-				Expect(devicePlugin.Spec.Template.Spec.Containers).Should(
-					ContainElement(MatchFields(IgnoreExtras, Fields{
-						"Args": ContainElement(Equal("-maxPods=1")),
-					})),
-				)
-			})
-
-		})
+			},
+			Entry( /*It*/ "shouldn't add anything when empty", nil),
+			Entry( /*It*/ "should pass the value of maxPodsPerNode through",
+				&onloadv1alpha1.DevicePluginSpec{MaxPodsPerNode: ptr.To(1)},
+			),
+			Entry( /*It*/ "should pass the value of setPreload through",
+				&onloadv1alpha1.DevicePluginSpec{SetPreload: ptr.To(false)},
+			),
+		)
 	})
 })
