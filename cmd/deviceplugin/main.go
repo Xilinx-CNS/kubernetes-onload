@@ -15,14 +15,18 @@ func main() {
 		"Number of Onload resources to advertise on each node")
 	needNicPtr := flag.Bool("needNic", true,
 		"Should the Device Plugin fail if no compatible nics are found")
-
+	ldPreloadPtr := flag.Bool("setPreload", true,
+		"Should the device plugin set the LD_PRELOAD environment variable in the pod")
 	flag.Parse()
 	err := flag.Lookup("logtostderr").Value.Set("true")
 	if err != nil {
 		glog.Fatalf("Failed to initialise device plugin: %v", err)
 	}
 	glog.Info("Starting device plugin")
-	manager, err := deviceplugin.NewNicManager(*maxPodsPerNodePtr, *needNicPtr)
+	manager, err := deviceplugin.NewNicManager(
+		*maxPodsPerNodePtr,
+		*ldPreloadPtr,
+		*needNicPtr)
 	if err != nil {
 		glog.Fatalf("Failed to initialise device plugin: %v", err)
 	}

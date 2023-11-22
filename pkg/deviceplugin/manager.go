@@ -40,7 +40,7 @@ func (manager *NicManager) GetDeviceFiles() []*pluginapi.DeviceSpec {
 }
 
 // NewNicManager allocates and initialises a new NicManager
-func NewNicManager(maxPods int, needNic bool) (*NicManager, error) {
+func NewNicManager(maxPods int, usePreload, needNic bool) (*NicManager, error) {
 	nics, err := queryNics()
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func NewNicManager(maxPods int, needNic bool) (*NicManager, error) {
 	}
 	manager.envs = make(map[string]string)
 	manager.initDevices()
-	manager.initMounts()
+	manager.initMounts(usePreload)
 
 	manager.rpcServer = NewRPCServer(manager)
 	return manager, nil
