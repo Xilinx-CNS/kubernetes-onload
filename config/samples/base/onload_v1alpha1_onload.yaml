@@ -63,3 +63,6 @@ spec:
   devicePlugin:
     devicePluginImage: kitchen-sink.kube.test:5000/deviceplugin:latest
     imagePullPolicy: Always
+    # Uncomment the following line to control number of pods that can request
+    # onload on a node
+    # maxPodsPerNode: 100

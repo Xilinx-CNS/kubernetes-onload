@@ -901,6 +901,16 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		},
 	}
 
+	devicePluginArgs := []string{}
+	if onload.Spec.DevicePlugin.MaxPodsPerNode != nil {
+		devicePluginArgs = append(devicePluginArgs,
+			fmt.Sprintf("-maxPods=%d", *onload.Spec.DevicePlugin.MaxPodsPerNode))
+	}
+
+	if len(devicePluginArgs) > 0 {
+		devicePluginContainer.Args = devicePluginArgs
+	}
+
 	workerContainerName := "onload-worker"
 
 	workerContainerEnv := []corev1.EnvVar{

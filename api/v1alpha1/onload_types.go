@@ -84,6 +84,14 @@ type DevicePluginSpec struct {
 	// ImagePullPolicy is the policy used when pulling images.
 	// More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
+
+	// +optional
+	// MaxPodsPerNode is the number of Kubernetes devices that the Onload
+	// Device Plugin should register with the kubelet. Notionally this is
+	// equivalent to the number of pods that can request an onload resource on
+	// each node.
+	// +kubebuilder:default:=100
+	MaxPodsPerNode *int `json:"maxPodsPerNode,omitempty"`
 }
 
 // Spec is the top-level specification for onload and related products that are

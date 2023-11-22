@@ -27,4 +27,4 @@ COPY --from=builder /app/bin/onload-device-plugin /app/bin/onload-worker /usr/bi
 COPY --from=builder /app/LICENSE /licenses/LICENSE
 USER 1001
 
-CMD ["/usr/bin/onload-device-plugin"]
+ENTRYPOINT ["/usr/bin/onload-device-plugin"]
