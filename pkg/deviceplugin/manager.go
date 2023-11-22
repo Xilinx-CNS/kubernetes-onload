@@ -38,24 +38,15 @@ func (manager *NicManager) GetDeviceFiles() []*pluginapi.DeviceSpec {
 	return manager.deviceFiles
 }
 
-// Determines the maximum number of pods to allow on each node
-func getMaxPodsPerNode() int {
-	// Currently an arbitrary number. This may or may not have to be dynamic
-	// depending on how the sfc devices are passed through to the pods (VF,
-	// ipvlan, macvlan) and the cluster's network configuration (multus,
-	// calico, etc.).
-	return 100
-}
-
 // NewNicManager allocates and initialises a new NicManager
-func NewNicManager() (*NicManager, error) {
+func NewNicManager(maxPods int) (*NicManager, error) {
 	nics, err := queryNics()
 	if err != nil {
 		return nil, err
 	}
 	manager := &NicManager{
 		interfaces:     nics,
-		maxPodsPerNode: getMaxPodsPerNode(),
+		maxPodsPerNode: maxPods,
 	}
 	manager.envs = make(map[string]string)
 	manager.initDevices()
