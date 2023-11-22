@@ -912,6 +912,11 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 			fmt.Sprintf("-setPreload=%t", *onload.Spec.DevicePlugin.SetPreload))
 	}
 
+	if onload.Spec.DevicePlugin.MountOnload != nil {
+		devicePluginArgs = append(devicePluginArgs,
+			fmt.Sprintf("-mountOnload=%t", *onload.Spec.DevicePlugin.MountOnload))
+	}
+
 	if len(devicePluginArgs) > 0 {
 		devicePluginContainer.Args = devicePluginArgs
 	}

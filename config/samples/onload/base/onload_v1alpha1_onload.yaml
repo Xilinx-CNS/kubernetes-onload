@@ -57,3 +57,4 @@ spec:
     #maxPodsPerNode: 100
     # Uncomment to select whether LD_PRELOAD should be set by the device plugin
     # preload: true
+    # mountOnload: false

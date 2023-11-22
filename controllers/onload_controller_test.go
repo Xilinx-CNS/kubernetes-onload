@@ -832,6 +832,13 @@ var _ = Describe("onload controller", func() {
 							})),
 						)
 					}
+					if dev.MountOnload != nil {
+						Expect(devicePlugin.Spec.Template.Spec.Containers).Should(
+							ContainElement(MatchFields(IgnoreExtras, Fields{
+								"Args": ContainElement(Equal(fmt.Sprintf("-mountOnload=%t", *dev.MountOnload))),
+							})),
+						)
+					}
 				}
 			},
 			Entry( /*It*/ "shouldn't add anything when empty", nil),
@@ -840,6 +847,9 @@ var _ = Describe("onload controller", func() {
 			),
 			Entry( /*It*/ "should pass the value of setPreload through",
 				&onloadv1alpha1.DevicePluginSpec{SetPreload: ptr.To(false)},
+			),
+			Entry( /*It*/ "should pass the value of mountOnload through",
+				&onloadv1alpha1.DevicePluginSpec{MountOnload: ptr.To(false)},
 			),
 		)
 	})
