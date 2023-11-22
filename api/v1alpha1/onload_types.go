@@ -76,6 +76,7 @@ type OnloadSpec struct {
 }
 
 // Currently unimplemented
+// +kubebuilder:validation:XValidation:message="SetPreload and MountOnload mutually exclusive",rule="!(self.setPreload && self.mountOnload)"
 type DevicePluginSpec struct {
 	// DevicePluginImage
 	DevicePluginImage string `json:"devicePluginImage"`
@@ -96,13 +97,14 @@ type DevicePluginSpec struct {
 	// +optional
 	// Preload determines whether the Onload Device Plugin will set LD_PRELOAD
 	// for pods using Onload.
+	// Mutually exclusive with MountOnload
 	// +kubebuilder:default:=true
 	SetPreload *bool `json:"setPreload,omitempty"`
 
 	// +optional
 	// MountOnload is used by the Onload Device Plugin to decide whether to
-	// mount the "onload" script as a file in the container's file system.
-	// "onload" is mount at "/usr/bin/onload"
+	// mount the `onload` script as a file in the container's filesystem.
+	// `onload` is mounted at `/usr/bin/onload`
 	// Mutually exclusive with Preload
 	// +kubebuilder:default:=false
 	MountOnload *bool `json:"mountOnload,omitempty"`

@@ -55,14 +55,25 @@ spec:
                       Notionally this is equivalent to the number of pods that can
                       request an onload resource on each node.
                     type: integer
+                  mountOnload:
+                    default: false
+                    description: MountOnload is used by the Onload Device Plugin to
+                      decide whether to mount the `onload` script as a file in the
+                      container's filesystem. `onload` is mounted at `/usr/bin/onload`
+                      Mutually exclusive with Preload
+                    type: boolean
                   setPreload:
                     default: true
                     description: Preload determines whether the Onload Device Plugin
-                      will set LD_PRELOAD for pods using Onload.
+                      will set LD_PRELOAD for pods using Onload. Mutually exclusive
+                      with MountOnload
                     type: boolean
                 required:
                 - devicePluginImage
                 type: object
+                x-kubernetes-validations:
+                - message: SetPreload and MountOnload mutually exclusive
+                  rule: '!(self.setPreload && self.mountOnload)'
               onload:
                 description: Onload is the specification of the version of onload
                   to be used by this CR
