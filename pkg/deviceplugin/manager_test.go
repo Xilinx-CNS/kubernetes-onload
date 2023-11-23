@@ -11,11 +11,18 @@ import (
 )
 
 var _ = Describe("Testing command line options", func() {
+	var config NicManagerConfig
+
+	BeforeEach(func() {
+		config = DefaultConfig
+		config.NeedNic = false
+	})
 
 	DescribeTable("It should set maxPodsPerNode correctly", func(num int) {
-		man, err := NewNicManager(num, true, false, false)
+		config.MaxPodsPerNode = num
+		man, err := NewNicManager(config)
 		Expect(err).Should(Succeed())
-		Expect(man.maxPodsPerNode).Should(Equal(num))
+		Expect(man.config.MaxPodsPerNode).Should(Equal(num))
 		Expect(len(man.devices)).Should(Equal(num))
 	},
 		Entry( /*It*/ "should set it to 0", 0),
@@ -25,7 +32,8 @@ var _ = Describe("Testing command line options", func() {
 	)
 
 	It("should set LD_PRELOAD when appropriate", func() {
-		man, err := NewNicManager(100, true, false, false)
+		config.SetPreload = true
+		man, err := NewNicManager(config)
 		Expect(err).Should(Succeed())
 		Expect(man.envs).Should(HaveKeyWithValue(
 			"LD_PRELOAD",
@@ -34,13 +42,16 @@ var _ = Describe("Testing command line options", func() {
 	})
 
 	It("should not set LD_PRELOAD if empty", func() {
-		man, err := NewNicManager(100, false, false, false)
+		config.SetPreload = false
+		man, err := NewNicManager(config)
 		Expect(err).Should(Succeed())
 		Expect(man.envs).ShouldNot(HaveKey("LD_PRELOAD"))
 	})
 
 	It("should mount onload when appropriate", func() {
-		man, err := NewNicManager(100, false, true, false)
+		config.SetPreload = false
+		config.MountOnload = true
+		man, err := NewNicManager(config)
 		Expect(err).Should(Succeed())
 
 		Expect(man.mounts).Should(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{

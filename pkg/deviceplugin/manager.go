@@ -16,19 +16,35 @@ import (
 // puts in a pod spec's "resources" section to request onload.
 const resourceName = "amd.com/onload"
 
+// NicManagerConfig describes the configuration of the NicManager.
+type NicManagerConfig struct {
+	MaxPodsPerNode int
+	SetPreload     bool
+	MountOnload    bool
+	NeedNic        bool
+}
+
+// Ideally this would be const, but go doesn't support const structs.
+var DefaultConfig = NicManagerConfig{
+	MaxPodsPerNode: 100,
+	SetPreload:     true,
+	MountOnload:    false,
+	NeedNic:        true,
+}
+
 // NicManager holds all the state required by the device plugin
 type NicManager struct {
 	// interfaces is used to check the presence of any sfc nics on the node.
 	// Currently it is just used as a check for existence and no additional
 	// logic takes place.
-	interfaces     []string
-	deviceFiles    []*pluginapi.DeviceSpec
-	mounts         []*pluginapi.Mount
-	devices        []*pluginapi.Device
-	envs           map[string]string
-	maxPodsPerNode int
-	rpcServer      *RPCServer
-	wg             sync.WaitGroup
+	interfaces  []string
+	deviceFiles []*pluginapi.DeviceSpec
+	mounts      []*pluginapi.Mount
+	devices     []*pluginapi.Device
+	envs        map[string]string
+	rpcServer   *RPCServer
+	wg          sync.WaitGroup
+	config      NicManagerConfig
 }
 
 func (manager *NicManager) GetInterfaces() []string {
@@ -40,28 +56,27 @@ func (manager *NicManager) GetDeviceFiles() []*pluginapi.DeviceSpec {
 }
 
 // NewNicManager allocates and initialises a new NicManager
-func NewNicManager(maxPods int,
-	usePreload, mountOnload, needNic bool,
+func NewNicManager(
+	config NicManagerConfig,
 ) (*NicManager, error) {
 	nics, err := queryNics()
 	if err != nil {
 		return nil, err
 	}
-	if len(nics) == 0 && needNic {
+	if len(nics) == 0 && config.NeedNic {
 		return nil, errors.New("no sfc devices found")
 	}
 	manager := &NicManager{
-		interfaces:     nics,
-		maxPodsPerNode: maxPods,
+		interfaces: nics,
+		config:     config,
 	}
 	manager.envs = make(map[string]string)
 	manager.initDevices()
 
-	if usePreload && mountOnload {
+	if manager.config.SetPreload && manager.config.MountOnload {
 		return nil, errors.New("setting both usePreload and mountOnload is not supported")
 	}
-
-	manager.initMounts(usePreload, mountOnload)
+	manager.initMounts()
 
 	manager.rpcServer = NewRPCServer(manager)
 	return manager, nil
@@ -71,7 +86,7 @@ func NewNicManager(maxPods int,
 func (manager *NicManager) initDevices() {
 	manager.devices = []*pluginapi.Device{}
 	fmt.Println(manager.interfaces)
-	for i := 0; i < manager.maxPodsPerNode; i++ {
+	for i := 0; i < manager.config.MaxPodsPerNode; i++ {
 		name := fmt.Sprintf("sfc-%v", i)
 		device := &pluginapi.Device{
 			ID:     name,
