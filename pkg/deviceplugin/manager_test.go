@@ -3,6 +3,7 @@
 package deviceplugin
 
 import (
+	"os"
 	"path"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -16,6 +17,26 @@ var _ = Describe("Testing command line options", func() {
 	BeforeEach(func() {
 		config = DefaultConfig
 		config.NeedNic = false
+	})
+
+	It("should mount onload libraries", func() {
+		tmpDir, err := os.MkdirTemp("", "tmp-onload-libs")
+		Expect(err).Should(Succeed())
+		defer os.RemoveAll(tmpDir)
+
+		Expect(os.MkdirAll(path.Join(tmpDir, hostLib64path), os.ModePerm)).Should(Succeed())
+		file, err := os.Create(path.Join(tmpDir, hostLib64path, "libonload.so"))
+		Expect(err).Should(Succeed())
+		defer file.Close()
+
+		config.HostPathPrefix = tmpDir
+
+		man, err := NewNicManager(config)
+		Expect(err).Should(Succeed())
+		Expect(man.mounts).Should(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+			"HostPath":      Equal(path.Join(tmpDir, hostLib64path, "libonload.so")),
+			"ContainerPath": Equal(path.Join(config.BaseMountPath, config.LibMountPath, "libonload.so")),
+		}))))
 	})
 
 	DescribeTable("It should set maxPodsPerNode correctly", func(num int) {
@@ -37,7 +58,7 @@ var _ = Describe("Testing command line options", func() {
 		Expect(err).Should(Succeed())
 		Expect(man.envs).Should(HaveKeyWithValue(
 			"LD_PRELOAD",
-			path.Join(destLibDir, lib64path, "libonload.so")),
+			path.Join("/opt/onload", hostLib64path, "libonload.so")),
 		)
 	})
 
@@ -55,8 +76,8 @@ var _ = Describe("Testing command line options", func() {
 		Expect(err).Should(Succeed())
 
 		Expect(man.mounts).Should(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
-			"ContainerPath": Equal(path.Join(destDirBase, usrBinPath, "onload")),
-			"HostPath":      Equal(path.Join(hostPathPrefix, usrBinPath, "onload")),
+			"ContainerPath": Equal(path.Join(config.BaseMountPath, config.BinMountPath, "onload")),
+			"HostPath":      Equal(path.Join(config.HostPathPrefix, hostUsrBinPath, "onload")),
 		}))))
 	})
 })

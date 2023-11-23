@@ -26,6 +26,14 @@ func main() {
 	flag.BoolVar(&config.MountOnload, "mountOnload",
 		deviceplugin.DefaultConfig.MountOnload,
 		"Should the device plugin mount the onload script into the pod")
+	flag.StringVar(&config.HostPathPrefix, "hostOnloadPath", "/opt/onload/",
+		"Base location of onload files on the host filesystem")
+	flag.StringVar(&config.BaseMountPath, "baseMountPath", "/opt/onload",
+		"Prefix to be applied to all file mounts in the container's file system")
+	flag.StringVar(&config.BinMountPath, "binMountPath", "/usr/bin/",
+		"Location to mount onload binaries in the container's file system")
+	flag.StringVar(&config.LibMountPath, "libMountPath", "/usr/lib64",
+		"Location to mount onload libraries in the container's file system")
 	flag.Parse()
 	err := flag.Lookup("logtostderr").Value.Set("true")
 	if err != nil {
