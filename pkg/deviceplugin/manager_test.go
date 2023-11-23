@@ -80,4 +80,11 @@ var _ = Describe("Testing command line options", func() {
 			"HostPath":      Equal(path.Join(config.HostPathPrefix, hostUsrBinPath, "onload")),
 		}))))
 	})
+
+	It("should fail if both preload and mountOnload flags are set", func() {
+		config.SetPreload = true
+		config.MountOnload = true
+		_, err := NewNicManager(config)
+		Expect(err).ShouldNot(Succeed())
+	})
 })
