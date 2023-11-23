@@ -21,6 +21,10 @@ type NicManagerConfig struct {
 	MaxPodsPerNode int
 	SetPreload     bool
 	MountOnload    bool
+	HostPathPrefix string
+	BaseMountPath  string
+	BinMountPath   string
+	LibMountPath   string
 	NeedNic        bool
 }
 
@@ -29,6 +33,10 @@ var DefaultConfig = NicManagerConfig{
 	MaxPodsPerNode: 100,
 	SetPreload:     true,
 	MountOnload:    false,
+	HostPathPrefix: "/opt/onload",
+	BaseMountPath:  "/opt/onload",
+	BinMountPath:   "/usr/bin",
+	LibMountPath:   "/usr/lib64",
 	NeedNic:        true,
 }
 

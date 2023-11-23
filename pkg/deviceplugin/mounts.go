@@ -12,11 +12,8 @@ import (
 )
 
 const (
-	hostPathPrefix = "/opt/onload"
-	lib64path      = "/usr/lib64"
-	usrBinPath     = "/usr/bin"
-	destLibDir     = "/opt/onload"
-	destDirBase    = ""
+	hostLib64path  = "/usr/lib64"
+	hostUsrBinPath = "/usr/bin"
 )
 
 // deviceMounts are the device nodes required to run onload in a pod
@@ -61,9 +58,8 @@ func (manager *NicManager) addFileMount(hostPath, containerPath string) {
 }
 
 // Returns all versioned names of this library file
-func findLibraryVersions(filename string) ([]string, error) {
-	hostLibDir := path.Join(hostPathPrefix, lib64path)
-	infos, err := os.ReadDir(hostLibDir)
+func findLibraryVersions(filename, hostPathPrefix string) ([]string, error) {
+	infos, err := os.ReadDir(path.Join(hostPathPrefix, hostLib64path))
 	if err != nil {
 		return nil, err
 	}
@@ -89,13 +85,17 @@ func findLibraryVersions(filename string) ([]string, error) {
 //     compatibile with all distros we must mount the library in multiple
 //     directories inside the container
 func (manager *NicManager) addLibraryMounts(baseFilename string) error {
-	filenames, err := findLibraryVersions(baseFilename)
+	filenames, err := findLibraryVersions(baseFilename,
+		manager.config.HostPathPrefix)
 	if err != nil {
 		return err
 	}
 	for _, filename := range filenames {
-		hostPath := path.Join(hostPathPrefix, lib64path, filename)
-		manager.addFileMount(hostPath, path.Join(destLibDir, lib64path, filename))
+		manager.addFileMount(
+			path.Join(manager.config.HostPathPrefix, hostLib64path, filename),
+			path.Join(manager.config.BaseMountPath, manager.config.LibMountPath,
+				filename),
+		)
 	}
 	return nil
 }
@@ -118,13 +118,16 @@ func (manager *NicManager) initMounts() {
 	if manager.config.MountOnload {
 		for _, file := range fileMounts {
 			manager.addFileMount(
-				path.Join(hostPathPrefix, usrBinPath, file),
-				path.Join(destDirBase, usrBinPath, file),
+				path.Join(manager.config.HostPathPrefix, hostUsrBinPath, file),
+				path.Join(manager.config.BaseMountPath,
+					manager.config.BinMountPath, file),
 			)
 		}
 	}
 
 	if manager.config.SetPreload {
-		manager.envs["LD_PRELOAD"] = path.Join(destLibDir, lib64path, "libonload.so")
+		manager.envs["LD_PRELOAD"] =
+			path.Join(manager.config.BaseMountPath, manager.config.LibMountPath,
+				"libonload.so")
 	}
 }
