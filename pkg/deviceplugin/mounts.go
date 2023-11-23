@@ -101,7 +101,7 @@ func (manager *NicManager) addLibraryMounts(baseFilename string) error {
 }
 
 // Initialises the set of host files to mount in each container
-func (manager *NicManager) initMounts(usePreload, mountOnload bool) {
+func (manager *NicManager) initMounts() {
 	manager.deviceFiles = []*pluginapi.DeviceSpec{}
 
 	for _, path := range deviceMounts {
@@ -115,7 +115,7 @@ func (manager *NicManager) initMounts(usePreload, mountOnload bool) {
 		}
 	}
 
-	if mountOnload {
+	if manager.config.MountOnload {
 		for _, file := range fileMounts {
 			manager.addFileMount(
 				path.Join(hostPathPrefix, usrBinPath, file),
@@ -124,7 +124,7 @@ func (manager *NicManager) initMounts(usePreload, mountOnload bool) {
 		}
 	}
 
-	if usePreload {
+	if manager.config.SetPreload {
 		manager.envs["LD_PRELOAD"] = path.Join(destLibDir, lib64path, "libonload.so")
 	}
 }

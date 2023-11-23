@@ -11,13 +11,20 @@ import (
 )
 
 func main() {
-	maxPodsPerNodePtr := flag.Int("maxPods", 100,
+
+	config := deviceplugin.DefaultConfig
+
+	flag.IntVar(&config.MaxPodsPerNode, "maxPods",
+		deviceplugin.DefaultConfig.MaxPodsPerNode,
 		"Number of Onload resources to advertise on each node")
-	needNicPtr := flag.Bool("needNic", true,
+	flag.BoolVar(&config.NeedNic, "needNic",
+		deviceplugin.DefaultConfig.NeedNic,
 		"Should the Device Plugin fail if no compatible nics are found")
-	ldPreloadPtr := flag.Bool("setPreload", true,
+	flag.BoolVar(&config.SetPreload, "setPreload",
+		deviceplugin.DefaultConfig.SetPreload,
 		"Should the device plugin set the LD_PRELOAD environment variable in the pod")
-	mountOnloadPtr := flag.Bool("mountOnload", false,
+	flag.BoolVar(&config.MountOnload, "mountOnload",
+		deviceplugin.DefaultConfig.MountOnload,
 		"Should the device plugin mount the onload script into the pod")
 	flag.Parse()
 	err := flag.Lookup("logtostderr").Value.Set("true")
@@ -25,11 +32,7 @@ func main() {
 		glog.Fatalf("Failed to initialise device plugin: %v", err)
 	}
 	glog.Info("Starting device plugin")
-	manager, err := deviceplugin.NewNicManager(
-		*maxPodsPerNodePtr,
-		*ldPreloadPtr,
-		*mountOnloadPtr,
-		*needNicPtr)
+	manager, err := deviceplugin.NewNicManager(config)
 	if err != nil {
 		glog.Fatalf("Failed to initialise device plugin: %v", err)
 	}
