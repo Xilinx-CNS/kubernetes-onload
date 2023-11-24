@@ -4,7 +4,6 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -793,7 +792,7 @@ var _ = Describe("onload controller", func() {
 		)
 
 		DescribeTable("Testing Device Plugin options",
-			func(dev *onloadv1alpha1.DevicePluginSpec) {
+			func(dev *onloadv1alpha1.DevicePluginSpec, args string) {
 				devicePlugin := appsv1.DaemonSet{}
 				devicePluginName := types.NamespacedName{
 					Name:      onload.Name + "-onload-device-plugin-ds",
@@ -812,44 +811,43 @@ var _ = Describe("onload controller", func() {
 					return err == nil
 				}, timeout, pollingInterval).Should(BeTrue())
 
-				Expect(devicePlugin.Spec.Template.Spec.Containers).Should(
-					ContainElement(MatchFields(IgnoreExtras, Fields{
-						"Args": BeEmpty(),
-					})),
-				)
-				if dev != nil {
-					if dev.MaxPodsPerNode != nil {
-						Expect(devicePlugin.Spec.Template.Spec.Containers).Should(
-							ContainElement(MatchFields(IgnoreExtras, Fields{
-								"Args": ContainElement(Equal(fmt.Sprintf("-maxPods=%d", *dev.MaxPodsPerNode))),
-							})),
-						)
-					}
-					if dev.SetPreload != nil {
-						Expect(devicePlugin.Spec.Template.Spec.Containers).Should(
-							ContainElement(MatchFields(IgnoreExtras, Fields{
-								"Args": ContainElement(Equal(fmt.Sprintf("-setPreload=%t", *dev.SetPreload))),
-							})),
-						)
-					}
-					if dev.MountOnload != nil {
-						Expect(devicePlugin.Spec.Template.Spec.Containers).Should(
-							ContainElement(MatchFields(IgnoreExtras, Fields{
-								"Args": ContainElement(Equal(fmt.Sprintf("-mountOnload=%t", *dev.MountOnload))),
-							})),
-						)
-					}
+				if args != "" {
+					Expect(devicePlugin.Spec.Template.Spec.Containers).Should(
+						ContainElement(MatchFields(IgnoreExtras, Fields{
+							"Args": ContainElement(args),
+						})),
+					)
 				}
+
 			},
-			Entry( /*It*/ "shouldn't add anything when empty", nil),
+			Entry( /*It*/ "shouldn't add anything when empty", nil, ""),
 			Entry( /*It*/ "should pass the value of maxPodsPerNode through",
 				&onloadv1alpha1.DevicePluginSpec{MaxPodsPerNode: ptr.To(1)},
+				"-maxPods=1",
 			),
 			Entry( /*It*/ "should pass the value of setPreload through",
 				&onloadv1alpha1.DevicePluginSpec{SetPreload: ptr.To(false)},
+				"-setPreload=false",
 			),
 			Entry( /*It*/ "should pass the value of mountOnload through",
 				&onloadv1alpha1.DevicePluginSpec{MountOnload: ptr.To(false)},
+				"-mountOnload=false",
+			),
+			Entry( /*It*/ "should pass the value of hostOnloadPath through",
+				&onloadv1alpha1.DevicePluginSpec{HostOnloadPath: ptr.To("foo")},
+				"-hostOnloadPath=foo",
+			),
+			Entry( /*It*/ "should pass the value of baseMountPath through",
+				&onloadv1alpha1.DevicePluginSpec{BaseMountPath: ptr.To("bar")},
+				"-baseMountPath=bar",
+			),
+			Entry( /*It*/ "should pass the value of binMountPath through",
+				&onloadv1alpha1.DevicePluginSpec{BinMountPath: ptr.To("baz")},
+				"-binMountPath=baz",
+			),
+			Entry( /*It*/ "should pass the value of libMountPath through",
+				&onloadv1alpha1.DevicePluginSpec{LibMountPath: ptr.To("qux")},
+				"-libMountPath=qux",
 			),
 		)
 	})

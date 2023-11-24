@@ -41,12 +41,32 @@ spec:
                 description: DevicePlugin is the specification of the device plugin
                   that will add a new onload resource into the cluster.
                 properties:
+                  baseMountPath:
+                    default: /opt/onload
+                    description: BaseMountPath is a prefix to be applied to all onload
+                      file mounts in the container's filesystem.
+                    type: string
+                  binMountPath:
+                    default: /usr/bin
+                    description: BinMountPath is the location to mount onload binaries
+                      in the container's filesystem.
+                    type: string
                   devicePluginImage:
                     description: DevicePluginImage
+                    type: string
+                  hostOnloadPath:
+                    default: /opt/onload/
+                    description: HostOnloadPath is the base location of onload files
+                      on the host filesystem.
                     type: string
                   imagePullPolicy:
                     description: 'ImagePullPolicy is the policy used when pulling
                       images. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images'
+                    type: string
+                  libMounthPath:
+                    default: /usr/lib64
+                    description: LibMountPath is the location to mount onload libraries
+                      in the container's filesystem.
                     type: string
                   maxPodsPerNode:
                     default: 100
@@ -59,7 +79,7 @@ spec:
                     default: false
                     description: MountOnload is used by the Onload Device Plugin to
                       decide whether to mount the `onload` script as a file in the
-                      container's filesystem. `onload` is mounted at `/usr/bin/onload`
+                      container's filesystem. `onload` is mounted at `<baseMountPath>/<binMountpath>`
                       Mutually exclusive with Preload
                     type: boolean
                   setPreload:

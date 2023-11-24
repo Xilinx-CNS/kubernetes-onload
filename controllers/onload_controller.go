@@ -882,6 +882,32 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		return nil, err
 	}
 
+	hostOnloadPath := "/opt/onload"
+	if onload.Spec.DevicePlugin.HostOnloadPath != nil {
+		hostOnloadPath = *onload.Spec.DevicePlugin.HostOnloadPath
+	}
+
+	postStart := &corev1.LifecycleHandler{
+		Exec: &corev1.ExecAction{
+			Command: []string{
+				"/bin/sh", "-c",
+				fmt.Sprintf(`set -e;
+				chcon --type container_file_t --recursive %s ||
+				echo "chcon failed. System may not be SELinux enabled.";`, hostOnloadPath),
+			},
+		},
+	}
+
+	preStop := &corev1.LifecycleHandler{
+		Exec: &corev1.ExecAction{
+			Command: []string{
+				"/bin/sh", "-c",
+				fmt.Sprintf(`set -e;
+				rm -r %s;`, hostOnloadPath),
+			},
+		},
+	}
+
 	devicePluginContainer := corev1.Container{
 		Name:            "device-plugin",
 		Image:           onload.Spec.DevicePlugin.DevicePluginImage,
@@ -889,13 +915,18 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		SecurityContext: &corev1.SecurityContext{
 			Privileged: ptr.To(true),
 		},
+		// Lifecycle to manage the Onload files in the host.
+		Lifecycle: &corev1.Lifecycle{
+			PostStart: postStart,
+			PreStop:   preStop,
+		},
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				MountPath: "/var/lib/kubelet/device-plugins",
 				Name:      "kubelet-socket",
 			},
 			{
-				MountPath: "/opt/onload",
+				MountPath: hostOnloadPath,
 				Name:      "host-onload",
 			},
 		},
@@ -915,6 +946,30 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 	if onload.Spec.DevicePlugin.MountOnload != nil {
 		devicePluginArgs = append(devicePluginArgs,
 			fmt.Sprintf("-mountOnload=%t", *onload.Spec.DevicePlugin.MountOnload))
+	}
+
+	if onload.Spec.DevicePlugin.HostOnloadPath != nil {
+		devicePluginArgs = append(devicePluginArgs,
+			fmt.Sprintf("-hostOnloadPath=%s",
+				*onload.Spec.DevicePlugin.HostOnloadPath))
+	}
+
+	if onload.Spec.DevicePlugin.BaseMountPath != nil {
+		devicePluginArgs = append(devicePluginArgs,
+			fmt.Sprintf("-baseMountPath=%s",
+				*onload.Spec.DevicePlugin.BaseMountPath))
+	}
+
+	if onload.Spec.DevicePlugin.BinMountPath != nil {
+		devicePluginArgs = append(devicePluginArgs,
+			fmt.Sprintf("-binMountPath=%s",
+				*onload.Spec.DevicePlugin.BinMountPath))
+	}
+
+	if onload.Spec.DevicePlugin.LibMountPath != nil {
+		devicePluginArgs = append(devicePluginArgs,
+			fmt.Sprintf("-libMountPath=%s",
+				*onload.Spec.DevicePlugin.LibMountPath))
 	}
 
 	if len(devicePluginArgs) > 0 {
@@ -950,27 +1005,6 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		},
 	}
 
-	postStart := &corev1.LifecycleHandler{
-		Exec: &corev1.ExecAction{
-			Command: []string{
-				"/bin/sh", "-c",
-				`set -e;
-				chcon --type container_file_t --recursive /opt/onload/ ||
-				echo "chcon failed. System may not be SELinux enabled.";`,
-			},
-		},
-	}
-
-	preStop := &corev1.LifecycleHandler{
-		Exec: &corev1.ExecAction{
-			Command: []string{
-				"/bin/sh", "-c",
-				`set -e;
-				rm -r /opt/onload;`,
-			},
-		},
-	}
-
 	workerContainer := corev1.Container{
 		Name:            workerContainerName,
 		Image:           onload.Spec.DevicePlugin.DevicePluginImage,
@@ -984,19 +1018,9 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{
-				MountPath: "/opt/onload",
-				Name:      "host-onload",
-			},
-			{
 				MountPath: "/mnt/onload",
 				Name:      "worker-volume",
 			},
-		},
-
-		// Lifecycle to manage the Onload files in the host.
-		Lifecycle: &corev1.Lifecycle{
-			PostStart: postStart,
-			PreStop:   preStop,
 		},
 		Env: workerContainerEnv,
 	}
@@ -1023,6 +1047,10 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{
+				// MounthPath here doesn't have to match hostOnloadPath. The
+				// location in the initContainer's filesystem doesn't affect the
+				// device plugin, only whether they are both looking at the same
+				// volumeMount.
 				MountPath: "/host/onload",
 				Name:      "host-onload",
 			},
@@ -1049,7 +1077,7 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		Name: "host-onload",
 		VolumeSource: corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
-				Path: "/opt/onload",
+				Path: hostOnloadPath,
 				Type: ptr.To(corev1.HostPathDirectoryOrCreate),
 			},
 		},
