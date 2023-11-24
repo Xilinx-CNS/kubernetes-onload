@@ -134,6 +134,55 @@ There are two key fields in the above example CR:
 
 No further modifications are required to enable Onloaded applications.
 
+### Using Onload profiles
+
+If you want to run your onloaded application with a runtime profile we suggest
+using a ConfigMap to set the environment variables in the pod. We have included
+and example definition for the latency profile in `config/samples/profiles`
+directory. This can be applied as so:
+```text
+oc apply -k config/samples/profiles
+```
+which creates a new ConfigMap called `onload-latency-profile` in the current
+namespace.
+
+Then to use this in you pod, add the following to the container spec in your pod
+definition:
+
+```diff
+diff --git a/testpod.yaml b/testpod.yaml
+index 5259d67..ced3b2a 100644
+--- a/testpod.yaml
++++ b/testpod.yaml
+@@ -16,6 +16,9 @@ spec:
+     imagePullPolicy: Always
+     command:
+     - /test
++    envFrom:
++      - configMapRef:
++          name: onload-latency-profile
+     resources:
+       limits:
+         amd.com/onload: 1
+```
+
+#### Converting an existing profile
+If you have an existing profile defined as a `.opf` file you can generate a new
+ConfigMap definition from this using the `./scripts/profile_to_configmap.sh`
+script.
+
+`profile_to_configmap.sh` takes in a comma separated list of profiles and will
+output the text definition of the ConfigMap which can be saved into a file, or
+sent straight to the cluster. To apply the generated ConfigMap straight away
+run:
+```text
+./profile_to_configmap.sh -p /path/to/profile.opf | oc apply -f -
+```
+
+Currently the script produces ConfigMaps with a fixed naming structure,
+for example if you want to create a ConfigMap from a profile called
+`name.opf` the generated name will be `onload-name-profile`.
+
 ---
 
 Copyright (c) 2023 Advanced Micro Devices, Inc.
