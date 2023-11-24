@@ -104,7 +104,7 @@ type DevicePluginSpec struct {
 	// +optional
 	// MountOnload is used by the Onload Device Plugin to decide whether to
 	// mount the `onload` script as a file in the container's filesystem.
-	// `onload` is mounted at `/usr/bin/onload`
+	// `onload` is mounted at `<baseMountPath>/<binMountpath>`
 	// Mutually exclusive with Preload
 	// +kubebuilder:default:=false
 	MountOnload *bool `json:"mountOnload,omitempty"`
@@ -117,19 +117,19 @@ type DevicePluginSpec struct {
 
 	// +optional
 	// BaseMountPath is a prefix to be applied to all onload file mounts in the
-	// container's file system.
+	// container's filesystem.
 	// +kubebuilder:default=/opt/onload
 	BaseMountPath *string `json:"baseMountPath,omitempty"`
 
 	// +optional
 	// BinMountPath is the location to mount onload binaries in the container's
-	// file system.
+	// filesystem.
 	// +kubebuilder:default=/usr/bin
 	BinMountPath *string `json:"binMountPath,omitempty"`
 
 	// +optional
 	// LibMountPath is the location to mount onload libraries in the container's
-	// file system.
+	// filesystem.
 	// +kubebuilder:default=/usr/lib64
 	LibMountPath *string `json:"libMounthPath,omitempty"`
 }
