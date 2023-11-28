@@ -3,6 +3,7 @@
 package controllers
 
 import (
+	"context"
 	"errors"
 	"strconv"
 	"time"
@@ -22,6 +23,8 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	onloadv1alpha1 "github.com/Xilinx-CNS/kubernetes-onload/api/v1alpha1"
 	mock_client "github.com/Xilinx-CNS/kubernetes-onload/mocks/client"
@@ -837,4 +840,111 @@ var _ = Describe("onload controller", func() {
 
 		})
 	})
+})
+
+// Please note that each of these tests will spin-up a new envtest cluster
+// before each test and destroy it after. This has quite a heavy time cost, so
+// if possible please try to test functionality in a "lighter" way.
+// Running tests on an Intel(R) Xeon(R) Silver 4216 CPU @ 2.10GHz showed that
+// adding an empty test would increase the time taken to run `make test` by ~5s
+var _ = Describe("Recovery from a non-clean state", func() {
+
+	// Shadowing variables that relate to the env test cluster.
+	var (
+		k8sManager manager.Manager
+		k8sClient  client.Client
+		testEnv    *envtest.Environment
+		ctx        context.Context
+		cancel     context.CancelFunc
+	)
+
+	// General definitions for tests
+	var (
+		onload           onloadv1alpha1.Onload
+		devicePluginName types.NamespacedName
+	)
+
+	BeforeEach(func() {
+
+		ctx, cancel, testEnv, k8sClient, k8sManager = createEnvTestCluster()
+
+		onload = onloadv1alpha1.Onload{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "onload-test",
+				Namespace: "default",
+			},
+			Spec: onloadv1alpha1.Spec{
+				Selector: map[string]string{
+					"key": "",
+				},
+				Onload: onloadv1alpha1.OnloadSpec{
+					KernelMappings: []onloadv1alpha1.OnloadKernelMapping{
+						{
+							KernelModuleImage: "",
+							Regexp:            "",
+						},
+					},
+					UserImage: "image:tag",
+					Version:   "",
+				},
+				DevicePlugin: onloadv1alpha1.DevicePluginSpec{
+					DevicePluginImage: "image:tag",
+				},
+				ServiceAccountName: "",
+			},
+		}
+
+		devicePluginName = types.NamespacedName{
+			Name:      onload.Name + "-onload-device-plugin-ds",
+			Namespace: onload.Namespace,
+		}
+	})
+
+	AfterEach(func() {
+		cancel()
+		err := testEnv.Stop()
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("shouldn't remove existing operands", func() {
+
+		dsLabels := map[string]string{"onload.amd.com/name": devicePluginName.Name}
+		dp := appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      devicePluginName.Name,
+				Namespace: devicePluginName.Namespace,
+				Labels:    map[string]string{onloadVersionLabel: onload.Spec.Onload.Version},
+			},
+			Spec: appsv1.DaemonSetSpec{
+				Selector: &metav1.LabelSelector{MatchLabels: dsLabels},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: dsLabels,
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{Name: "foo", Image: "bar"},
+						},
+					},
+				},
+			},
+		}
+
+		Expect(k8sClient.Create(ctx, &onload)).Should(Succeed())
+
+		Expect(ctrl.SetControllerReference(&onload, &dp, testEnv.Scheme)).Should(Succeed())
+		Expect(k8sClient.Create(ctx, &dp)).Should(Succeed())
+
+		startReconciler(k8sManager, ctx)
+
+		devicePlugin := appsv1.DaemonSet{}
+
+		Eventually(func() bool {
+			err := k8sClient.Get(ctx, devicePluginName, &devicePlugin)
+			return err == nil
+		}, timeout, pollingInterval).Should(BeTrue())
+
+		Expect(dp.UID).To(Equal(devicePlugin.UID))
+	})
+
 })
