@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- namespace.yaml
+- ../../base
+
+configMapGenerator:
+- name: sfptpd-config
+  files:
+  - sfptpd.cfg
+
+# Corresponds to namespace.yaml
+namespace: sfptpd
+
+# Latest stable
+images:
+- name: onload/sfptpd
+  newName: docker.io/onload/sfptpd
+  newTag: 3.7.1.1000
+
+# Assign sfptpd daemon to a node with label `node-role.kubernetes.io/ptp`
+labels:
+- pairs:
+    node-role.kubernetes.io/ptp: ""
+  fields:
+  - path: spec/template/spec/nodeSelector
+    kind: DaemonSet
+    create: true

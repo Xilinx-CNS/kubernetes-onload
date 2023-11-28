@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- namespace.yaml
+- ../../base
+
+configMapGenerator:
+- name: sfptpd-config
+  files:
+  - sfptpd.cfg
+
+namespace: sfptpd
+
+images:
+- name: onload/sfptpd
+  newName: docker.io/onload/sfptpd
+  newTag: master-dev
