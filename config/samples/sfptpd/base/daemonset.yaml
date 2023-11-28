@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: MIT
+# (c) Copyright 2023 Advanced Micro Devices, Inc.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sfptpd
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sfptpd
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+  resourceNames:
+  - privileged
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sfptpd
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sfptpd
+subjects:
+- kind: ServiceAccount
+  name: sfptpd
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: sfptpd
+spec:
+  selector:
+    matchLabels:
+      name: sfptpd
+  template:
+    metadata:
+      labels:
+        name: sfptpd
+    spec:
+      hostNetwork: true
+      serviceAccountName: sfptpd
+      nodeSelector:
+        node-role.kubernetes.io/worker: ""
+      containers:
+      - image: onload/sfptpd:latest
+        name: sfptpd
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: etc-sfptpd
+          mountPath: "/etc/sfptpd"
+        securityContext:
+          privileged: true
+        args: ["-f", "/etc/sfptpd/sfptpd.cfg"]
+      volumes:
+      - name: etc-sfptpd
+        configMap:
+          name: sfptpd-config
