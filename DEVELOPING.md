@@ -40,9 +40,9 @@ Deploy the Onload Operator:
 ```sh
 make deploy IMG=$REGISTRY_BASE/operator:latest
 ```
+Ensure that `$DEVICE_IMG` is exported when deploying the operator, or append `DEVICE_IMG=...` to the make invocation.
 
 Continue with [deploying the Onload CR](README.md#onload-custom-resource-cr).
-Ensure the `devicePluginImage` is set to the above `$DEVICE_IMG`.
 
 
 ## Footnotes

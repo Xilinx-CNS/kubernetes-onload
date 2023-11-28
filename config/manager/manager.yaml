@@ -74,6 +74,9 @@ spec:
         - --leader-elect
         image: controller:latest
         name: manager
+        env:
+        - name: DEVICE_PLUGIN_IMG
+          value: deviceplugin
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

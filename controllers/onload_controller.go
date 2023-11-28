@@ -37,7 +37,8 @@ import (
 // OnloadReconciler reconciles a Onload object
 type OnloadReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme            *runtime.Scheme
+	DevicePluginImage string
 }
 
 //+kubebuilder:rbac:groups=onload.amd.com,resources=onloads,verbs=get;list;watch;create;update;patch;delete
@@ -910,7 +911,7 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 
 	devicePluginContainer := corev1.Container{
 		Name:            "device-plugin",
-		Image:           onload.Spec.DevicePlugin.DevicePluginImage,
+		Image:           r.DevicePluginImage,
 		ImagePullPolicy: onload.Spec.DevicePlugin.ImagePullPolicy,
 		SecurityContext: &corev1.SecurityContext{
 			Privileged: ptr.To(true),
@@ -1007,7 +1008,7 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 
 	workerContainer := corev1.Container{
 		Name:            workerContainerName,
-		Image:           onload.Spec.DevicePlugin.DevicePluginImage,
+		Image:           r.DevicePluginImage,
 		ImagePullPolicy: onload.Spec.DevicePlugin.ImagePullPolicy,
 
 		Command: []string{

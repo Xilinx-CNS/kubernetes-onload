@@ -78,8 +78,6 @@ type OnloadSpec struct {
 // Currently unimplemented
 // +kubebuilder:validation:XValidation:message="SetPreload and MountOnload mutually exclusive",rule="!(self.setPreload && self.mountOnload)"
 type DevicePluginSpec struct {
-	// DevicePluginImage
-	DevicePluginImage string `json:"devicePluginImage"`
 
 	// +optional
 	// ImagePullPolicy is the policy used when pulling images.

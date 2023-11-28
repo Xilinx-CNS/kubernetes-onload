@@ -10,10 +10,6 @@ patches:
 - path: patch-onload.yaml
 
 images:
-#- name: onload/onload-device-plugin
-#  newName: docker.io/onload/onload-device-plugin
-#  newTag: 3.0.0
-
 - name: onload/onload-source
   newName: docker.io/onload/onload-source
   newTag: 8.1.2.26

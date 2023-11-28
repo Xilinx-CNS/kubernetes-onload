@@ -51,7 +51,6 @@ spec:
     version:
     imagePullPolicy: Always
   devicePlugin:
-    devicePluginImage: onload/onload-device-plugin:3.0.0
     imagePullPolicy: Always
     # Limit number of pods that can request Onload on a node
     #maxPodsPerNode: 100
