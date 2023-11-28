@@ -51,9 +51,6 @@ spec:
                     description: BinMountPath is the location to mount onload binaries
                       in the container's filesystem.
                     type: string
-                  devicePluginImage:
-                    description: DevicePluginImage
-                    type: string
                   hostOnloadPath:
                     default: /opt/onload/
                     description: HostOnloadPath is the base location of onload files
@@ -88,8 +85,6 @@ spec:
                       will set LD_PRELOAD for pods using Onload. Mutually exclusive
                       with MountOnload
                     type: boolean
-                required:
-                - devicePluginImage
                 type: object
                 x-kubernetes-validations:
                 - message: SetPreload and MountOnload mutually exclusive

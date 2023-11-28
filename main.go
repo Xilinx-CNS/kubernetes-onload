@@ -5,6 +5,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -58,6 +59,14 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	devicePluginImage := os.Getenv("DEVICE_PLUGIN_IMG")
+	if devicePluginImage == "" {
+		setupLog.Error(
+			fmt.Errorf("%q environment variable empty or not set", "DEVICE_PLUGIN_IMG"),
+			"Unable to create device plugin")
+		os.Exit(1)
+	}
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
@@ -87,8 +96,9 @@ func main() {
 	}
 
 	if err = (&controllers.OnloadReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:            mgr.GetClient(),
+		Scheme:            mgr.GetScheme(),
+		DevicePluginImage: devicePluginImage,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Onload")
 		os.Exit(1)

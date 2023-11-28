@@ -88,8 +88,9 @@ var _ = BeforeSuite(func() {
 	Expect(k8sManager).NotTo(BeNil())
 
 	err = (&OnloadReconciler{
-		Client: k8sManager.GetClient(),
-		Scheme: k8sManager.GetScheme(),
+		Client:            k8sManager.GetClient(),
+		Scheme:            k8sManager.GetScheme(),
+		DevicePluginImage: "image:tag",
 	}).SetupWithManager(k8sManager)
 	Expect(err).NotTo(HaveOccurred())
 

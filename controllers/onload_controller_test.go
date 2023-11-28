@@ -588,9 +588,7 @@ var _ = Describe("onload controller", func() {
 						UserImage: "image:tag",
 						Version:   "",
 					},
-					DevicePlugin: onloadv1alpha1.DevicePluginSpec{
-						DevicePluginImage: "image:tag",
-					},
+					DevicePlugin:       onloadv1alpha1.DevicePluginSpec{},
 					ServiceAccountName: "",
 				},
 			}
@@ -800,7 +798,6 @@ var _ = Describe("onload controller", func() {
 				}
 
 				if dev != nil {
-					dev.DevicePluginImage = "image:tag"
 					onload.Spec.DevicePlugin = *dev
 				}
 
