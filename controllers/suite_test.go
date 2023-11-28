@@ -15,11 +15,11 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -32,7 +32,6 @@ import (
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
-var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
 
@@ -47,9 +46,9 @@ var (
 	cancel context.CancelFunc
 )
 
-var _ = BeforeSuite(func() {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
-	ctx, cancel = context.WithCancel(context.TODO())
+func createEnvTestCluster() (context.Context, context.CancelFunc,
+	*envtest.Environment, client.Client, manager.Manager) {
+	ctx, cancel := context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -67,7 +66,7 @@ var _ = BeforeSuite(func() {
 
 	var err error
 	// cfg is defined in this file globally.
-	cfg, err = testEnv.Start()
+	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
@@ -79,15 +78,22 @@ var _ = BeforeSuite(func() {
 
 	//+kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	k8sClient, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	k8sManager, err := manager.New(cfg, manager.Options{Scheme: scheme.Scheme})
+	k8sManager, err := manager.New(cfg, manager.Options{
+		Scheme:  scheme.Scheme,
+		Metrics: server.Options{BindAddress: "0"},
+	})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sManager).NotTo(BeNil())
 
-	err = (&OnloadReconciler{
+	return ctx, cancel, testEnv, k8sClient, k8sManager
+}
+
+func startReconciler(k8sManager manager.Manager, ctx context.Context) {
+	err := (&OnloadReconciler{
 		Client: k8sManager.GetClient(),
 		Scheme: k8sManager.GetScheme(),
 	}).SetupWithManager(k8sManager)
@@ -95,9 +101,18 @@ var _ = BeforeSuite(func() {
 
 	go func() {
 		defer GinkgoRecover()
-		err = k8sManager.Start(ctx)
+		err := k8sManager.Start(ctx)
 		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
 	}()
+}
+
+var _ = BeforeSuite(func() {
+	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
+	var k8sManager manager.Manager
+	ctx, cancel, testEnv, k8sClient, k8sManager = createEnvTestCluster()
+
+	startReconciler(k8sManager, ctx)
 
 	// k8s.io/apimachinery/pkg/util/rand is only used to generate unique
 	// namesapces that tests will run in. A fixed seed is used to make this more
