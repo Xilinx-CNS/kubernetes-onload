@@ -245,4 +245,52 @@ No further modifications are required to enable Onloaded applications.
 
 ---
 
+## Procedure for updating Onload Operator
+
+The current recommended approach for installing/upgrading the operator is as
+following:
+
+1. Build a new set of onload-images corresponding to the new version to be
+   installed.
+2. Adjust the Onload-CR and apply to point to the new image tags.
+3. If the SFC Machine Config is being used, rebuild and redploy this
+   configuration.
+
+N.B. Do note that during this process, any pods currently running on top of
+     Onload will be taken down during this upgrade process. This may require
+     additional human steps to restart these pods.
+
+---
+
+## Procedure for removing Onload
+
+### Remove the Onload CR (i.e. the individual Onload installation)
+
+In order to remove the current Onload CR installation, run the folowing commands:
+
+```text
+oc delete -k config/samples
+```
+
+This can be verified by running the following commands on openshift.
+
+```text
+oc get onload
+```
+
+With the above, nothing onload related should show up.
+
+On worker nodes, you can verify Onload has been successfully removed by checking the following.
+
+1) The Onload kernel module has been removed. (checked with modinfo onload)
+2) The SFC kernel module has been removed (only if using the CR for loading/unloading SFC)
+3) The folder /opt/onload should be empty.
+
+For complete removal of the Onload Operator, please follow the following procedure.
+```text
+make undeploy
+```
+
+
+
 Copyright (c) 2023 Advanced Micro Devices, Inc.
