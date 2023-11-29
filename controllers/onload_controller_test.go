@@ -861,7 +861,9 @@ var _ = Describe("Recovery from a non-clean state", func() {
 	// General definitions for tests
 	var (
 		onload           onloadv1alpha1.Onload
+		devicePlugin     appsv1.DaemonSet
 		devicePluginName types.NamespacedName
+		module           kmm.Module
 	)
 
 	BeforeEach(func() {
@@ -875,7 +877,7 @@ var _ = Describe("Recovery from a non-clean state", func() {
 			},
 			Spec: onloadv1alpha1.Spec{
 				Selector: map[string]string{
-					"key": "",
+					"key": "value",
 				},
 				Onload: onloadv1alpha1.OnloadSpec{
 					KernelMappings: []onloadv1alpha1.OnloadKernelMapping{
@@ -885,7 +887,7 @@ var _ = Describe("Recovery from a non-clean state", func() {
 						},
 					},
 					UserImage: "image:tag",
-					Version:   "",
+					Version:   "old",
 				},
 				DevicePlugin: onloadv1alpha1.DevicePluginSpec{
 					DevicePluginImage: "image:tag",
@@ -898,18 +900,9 @@ var _ = Describe("Recovery from a non-clean state", func() {
 			Name:      onload.Name + "-onload-device-plugin-ds",
 			Namespace: onload.Namespace,
 		}
-	})
-
-	AfterEach(func() {
-		cancel()
-		err := testEnv.Stop()
-		Expect(err).NotTo(HaveOccurred())
-	})
-
-	It("shouldn't remove existing operands", func() {
 
 		dsLabels := map[string]string{"onload.amd.com/name": devicePluginName.Name}
-		dp := appsv1.DaemonSet{
+		devicePlugin = appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      devicePluginName.Name,
 				Namespace: devicePluginName.Namespace,
@@ -925,26 +918,202 @@ var _ = Describe("Recovery from a non-clean state", func() {
 						Containers: []corev1.Container{
 							{Name: "foo", Image: "bar"},
 						},
+						InitContainers: []corev1.Container{
+							{
+								Name: "init", Image: onload.Spec.Onload.UserImage,
+							},
+						},
 					},
 				},
 			},
 		}
 
+		module = kmm.Module{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      onload.Name + onloadModuleNameSuffix,
+				Namespace: onload.Namespace,
+			},
+			Spec: kmm.ModuleSpec{
+				Selector: onload.Spec.Selector,
+				ModuleLoader: kmm.ModuleLoaderSpec{
+					Container: kmm.ModuleLoaderContainerSpec{
+						KernelMappings: []kmm.KernelMapping{{}},
+					},
+				},
+			},
+		}
+	})
+
+	AfterEach(func() {
+		cancel()
+		err := testEnv.Stop()
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("shouldn't remove existing operands", func() {
 		Expect(k8sClient.Create(ctx, &onload)).Should(Succeed())
 
-		Expect(ctrl.SetControllerReference(&onload, &dp, testEnv.Scheme)).Should(Succeed())
-		Expect(k8sClient.Create(ctx, &dp)).Should(Succeed())
+		Expect(ctrl.SetControllerReference(&onload, &devicePlugin, testEnv.Scheme)).Should(Succeed())
+		Expect(k8sClient.Create(ctx, &devicePlugin)).Should(Succeed())
 
 		startReconciler(k8sManager, ctx)
 
-		devicePlugin := appsv1.DaemonSet{}
+		// Create a new object so we can compare the old and new versions of the
+		// object
+		newDevicePlugin := appsv1.DaemonSet{}
 
 		Eventually(func() bool {
-			err := k8sClient.Get(ctx, devicePluginName, &devicePlugin)
+			err := k8sClient.Get(ctx, devicePluginName, &newDevicePlugin)
 			return err == nil
 		}, timeout, pollingInterval).Should(BeTrue())
 
-		Expect(dp.UID).To(Equal(devicePlugin.UID))
+		Expect(newDevicePlugin.UID).To(Equal(devicePlugin.UID))
+	})
+
+	// These test are restricted to testing the upgrading of the operands. Tests
+	// that use Nodes are in a subsequent section.
+	It("should continue upgrade process (device plugin)", func() {
+
+		// Fake the upgrade, the device plugin is still using the old values
+		onload.Spec.Onload.Version = "new"
+		onload.Spec.Onload.UserImage = "image:tag-newer"
+
+		Expect(onload.Spec.Onload.Version).ShouldNot(Equal(devicePlugin.Labels[onloadVersionLabel]))
+
+		Expect(k8sClient.Create(ctx, &onload)).Should(Succeed())
+
+		Expect(ctrl.SetControllerReference(&onload, &devicePlugin, testEnv.Scheme)).Should(Succeed())
+		Expect(k8sClient.Create(ctx, &devicePlugin)).Should(Succeed())
+
+		startReconciler(k8sManager, ctx)
+
+		// Create a new object so we can compare the old and new versions of the
+		// object
+		newDevicePlugin := appsv1.DaemonSet{}
+
+		Eventually(func(g Gomega) {
+			g.Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(&devicePlugin), &newDevicePlugin)).Should(Succeed())
+			g.Expect(newDevicePlugin.UID).To(Equal(devicePlugin.UID))
+			g.Expect(newDevicePlugin.Labels[onloadVersionLabel]).ShouldNot(Equal(devicePlugin.Labels[onloadVersionLabel]))
+			g.Expect(newDevicePlugin.Labels[onloadVersionLabel]).Should(Equal(onload.Spec.Onload.Version))
+		}, timeout, pollingInterval).Should(Succeed())
+
+	})
+
+	It("should continue upgrade process (module)", func() {
+		// Fake the upgrade, the operand is still using the old values
+		onload.Spec.Onload.Version = "new"
+		onload.Spec.Onload.UserImage = "image:tag-newer"
+
+		Expect(onload.Spec.Onload.Version).ShouldNot(Equal(module.Spec.ModuleLoader.Container.Version))
+
+		Expect(k8sClient.Create(ctx, &onload)).Should(Succeed())
+
+		Expect(ctrl.SetControllerReference(&onload, &module, testEnv.Scheme)).Should(Succeed())
+		Expect(k8sClient.Create(ctx, &module)).Should(Succeed())
+
+		startReconciler(k8sManager, ctx)
+
+		// Create a new object so we can compare the old and new versions of the
+		// object
+		newModule := kmm.Module{}
+
+		Eventually(func(g Gomega) {
+			g.Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(&module), &newModule)).Should(Succeed())
+			g.Expect(newModule.UID).To(Equal(module.UID))
+			g.Expect(newModule.Spec.ModuleLoader.Container.Version).ShouldNot(Equal(module.Spec.ModuleLoader.Container.Version))
+			g.Expect(newModule.Spec.ModuleLoader.Container.Version).Should(Equal(onload.Spec.Onload.Version))
+		}, timeout, pollingInterval).Should(Succeed())
+
+	})
+
+	Describe("Node-based tests", func() {
+
+		var (
+			node           corev1.Node
+			kmmOnloadLabel string
+			dpOnloadLabel  string
+		)
+
+		BeforeEach(func() {
+			node = corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-node",
+					Labels: map[string]string{
+						"key": "value",
+					},
+				},
+			}
+
+			kmmOnloadLabel = kmmOnloadLabelName(onload.Name, onload.Namespace)
+			dpOnloadLabel = onloadLabelName(onload.Name, onload.Namespace)
+		})
+
+		It("should add the initial labels", func() {
+
+			Expect(k8sClient.Create(ctx, &node)).Should(Succeed())
+
+			Expect(k8sClient.Create(ctx, &onload)).Should(Succeed())
+
+			startReconciler(k8sManager, ctx)
+
+			newNode := corev1.Node{}
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(&node), &newNode)).Should(Succeed())
+				g.Expect(newNode.Labels[kmmOnloadLabel]).Should(Equal(onload.Spec.Onload.Version))
+				g.Expect(newNode.Labels[dpOnloadLabel]).Should(Equal(onload.Spec.Onload.Version))
+			}, timeout, pollingInterval).Should(Succeed())
+		})
+
+		// Want to test 3 different values for each label/version: unset, old and new
+		DescribeTable("controller starting at different points during upgrade",
+			func(label1, label2 string) {
+				if label1 != "" {
+					node.Labels[kmmOnloadLabel] = label1
+				}
+
+				if label2 != "" {
+					node.Labels[dpOnloadLabel] = label2
+				}
+
+				Expect(k8sClient.Create(ctx, &node)).Should(Succeed())
+
+				onload.Spec.Onload.Version = "new"
+				onload.Spec.Onload.UserImage = "image:tag-newer"
+				Expect(k8sClient.Create(ctx, &onload)).Should(Succeed())
+
+				if label1 != "" {
+					module.Spec.ModuleLoader.Container.Version = label1
+				}
+				Expect(ctrl.SetControllerReference(&onload, &module, testEnv.Scheme)).Should(Succeed())
+
+				if label2 != "" {
+					devicePlugin.Labels[onloadVersionLabel] = label2
+				}
+				Expect(ctrl.SetControllerReference(&onload, &devicePlugin, testEnv.Scheme)).Should(Succeed())
+
+				Expect(k8sClient.Create(ctx, &module)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, &devicePlugin)).Should(Succeed())
+
+				startReconciler(k8sManager, ctx)
+
+				newNode := corev1.Node{}
+				Eventually(func(g Gomega) {
+					g.Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(&node), &newNode)).Should(Succeed())
+					g.Expect(newNode.Labels[kmmOnloadLabel]).Should(Equal(onload.Spec.Onload.Version))
+					g.Expect(newNode.Labels[dpOnloadLabel]).Should(Equal(onload.Spec.Onload.Version))
+				}, timeout, pollingInterval).Should(Succeed())
+			},
+			Entry("00", "", ""),
+			Entry("01", "", "old"), // I don't think this should be able to happen
+			Entry("02", "", "new"),
+			Entry("10", "old", ""),
+			Entry("11", "old", "old"),
+			Entry("12", "old", "new"),
+			Entry("20", "new", ""),
+			Entry("21", "new", "old"), // I don't think this should be able to happen
+			Entry("22", "new", "new"),
+		)
 	})
 
 })
