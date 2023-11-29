@@ -323,12 +323,23 @@ func (r *OnloadReconciler) addOnloadLabelsToNodes(ctx context.Context, onload *o
 		if node.Labels[kmmLabel] != onload.Spec.Onload.Version {
 			continue
 		}
-		if _, found := node.Labels[labelKey]; !found {
+		value, found := node.Labels[labelKey]
+		if !found {
 			nodeCopy := node.DeepCopy()
 			node.Labels[labelKey] = onload.Spec.Onload.Version
 			err := r.Patch(ctx, &node, client.MergeFrom(nodeCopy))
 			if err != nil {
 				log.Error(err, "Failed to patch Node with new label",
+					"Node", node.Name)
+				return nil, err
+			}
+			changesMade = true
+		} else if value != onload.Spec.Onload.Version {
+			nodeCopy := node.DeepCopy()
+			delete(node.Labels, labelKey)
+			err := r.Patch(ctx, &node, client.MergeFrom(nodeCopy))
+			if err != nil {
+				log.Error(err, "Failed to remove old label from Node",
 					"Node", node.Name)
 				return nil, err
 			}
