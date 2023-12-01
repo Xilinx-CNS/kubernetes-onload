@@ -11,6 +11,9 @@ bin
 testbin/*
 Dockerfile.cross
 
+# Machine config output
+scripts/machineconfig/mc
+
 # Test binary, build with `go test -c`
 *.test
 

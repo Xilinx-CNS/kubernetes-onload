@@ -60,6 +60,9 @@ DEVICE_IMG ?= deviceplugin:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.26.0
 
+OPENSHIFT_VER ?= 4.12.0
+SFC_NODE_TYPE ?= worker
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -150,6 +153,19 @@ device-plugin-docker-build: test ## Build docker image with the manager.
 .PHONY: device-plugin-docker-push
 device-plugin-docker-push: test ## Push docker image to the registry.
 	docker push ${DEVICE_IMG}
+
+.PHONY: sfc-mc-docker-build
+sfc-mc-docker-build: ## Build sfc mc yaml
+	docker build --build-arg="ONLOAD_MODULE_IMAGE=${ONLOAD_MODULE_IMAGE}" --build-arg="OPENSHIFT_VER=${OPENSHIFT_VER}" --build-arg="NODE_TYPE=${SFC_NODE_TYPE}" ./scripts/machineconfig -o ./scripts/machineconfig/output
+
+.PHONY: sfc-mc-build
+sfc-mc-build: ## Build sfc mc yaml
+	./scripts/machineconfig/create_machine_config.sh ${OPENSHIFT_VER} ${ONLOAD_MODULE_IMAGE} ${SFC_NODE_TYPE}
+
+.PHONY: sfc-mc-deploy
+sfc-mc-deploy: ## Deploy sfc mc yaml
+	kubectl apply -f ./scripts/machineconfig/mc/99-sfc-machineconfig.yaml
+
 
 # PLATFORMS defines the target platforms for  the manager image be build to provide support to multiple
 # architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:
