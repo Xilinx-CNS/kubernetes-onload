@@ -61,7 +61,7 @@ DEVICE_IMG ?= deviceplugin:latest
 ENVTEST_K8S_VERSION = 1.26.0
 
 OPENSHIFT_VER ?= 4.12.0
-NODE_TYPE ?= worker
+SFC_NODE_TYPE ?= worker
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -156,11 +156,11 @@ device-plugin-docker-push: test ## Push docker image to the registry.
 
 .PHONY: sfc-mc-docker-build
 sfc-mc-docker-build: ## Build sfc mc yaml
-	docker build --build-arg="IMG=${IMG}" --build-arg="OPENSHIFT_VER=${OPENSHIFT_VER}" --build-arg="NODE_TYPE=${NODE_TYPE}" ./scripts/machineconfig -o ./scripts/machineconfig/mc
+	docker build --build-arg="ONLOAD_MODULE_IMAGE=${ONLOAD_MODULE_IMAGE}" --build-arg="OPENSHIFT_VER=${OPENSHIFT_VER}" --build-arg="NODE_TYPE=${SFC_NODE_TYPE}" ./scripts/machineconfig -o ./scripts/machineconfig/output
 
 .PHONY: sfc-mc-build
 sfc-mc-build: ## Build sfc mc yaml
-	./scripts/machineconfig/compile_butane.sh ${OPENSHIFT_VER} ${IMG} ${NODE_TYPE}
+	./scripts/machineconfig/create_machine_config.sh ${OPENSHIFT_VER} ${ONLOAD_MODULE_IMAGE} ${SFC_NODE_TYPE}
 
 .PHONY: sfc-mc-deploy
 sfc-mc-deploy: ## Deploy sfc mc yaml
