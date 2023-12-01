@@ -996,10 +996,14 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		ImagePullPolicy: onload.Spec.Onload.ImagePullPolicy,
 		Command: []string{
 			"/bin/sh", "-c",
+			// The Kubelet can be configured to store an emptyDir in the host's
+			// filesystem. `mkdir -p` is used in the case of a node reboot the
+			// emptyDir might be older than the actual pod, so the initContainer
+			// shouldn't fail if the directory already exists.
 			`set -e;
 			cp -TRv /opt/onload /host/onload;
 
-			mkdir -v /mnt/onload/sbin/;
+			mkdir -vp /mnt/onload/sbin/;
 			cp -v /opt/onload/sbin/onload_cp_server /mnt/onload/sbin/;
 			`,
 		},
