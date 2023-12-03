@@ -164,7 +164,7 @@ sfc-mc-build: ## Build sfc mc yaml
 
 .PHONY: sfc-mc-deploy
 sfc-mc-deploy: ## Deploy sfc mc yaml
-	kubectl apply -f ./scripts/machineconfig/mc/99-sfc-machineconfig.yaml
+	kubectl apply -f ./scripts/machineconfig/output/99-sfc-machineconfig.yaml
 
 
 # PLATFORMS defines the target platforms for  the manager image be build to provide support to multiple
