@@ -1,6 +1,6 @@
 # Onload Operator and Onload Device Plugin for Kubernetes and OpenShift
 
-This solution accelerates workloads using Onload in existing Kubernetes and OpenShift clusters.
+Use Onload to accelerate your workloads in Kubernetes and OpenShift clusters.
 
 ## Installation requirements
 
@@ -24,7 +24,7 @@ Please see Release Notes for further detail on version compatibility and feature
 Your terminal requires access to:
 
 * Your cluster via `kubectl` or `oc`
-* A working copy of [this repository](https://github.com/Xilinx-CNS/kubernetes-onload) (optional)
+* [This repository](https://github.com/Xilinx-CNS/kubernetes-onload)
 
 This documentation standardises on `kubectl` but both are compatible: `alias kubectl=oc`.
 
@@ -118,6 +118,8 @@ To run the above command using locally hosted container images, open this reposi
 [following overlay](config/samples/default-clusterlocal/kustomization.yaml):
 
 ```sh
+git clone https://github.com/Xilinx-CNS/kubernetes-onload && cd kubernetes-onload
+
 cp -r config/samples/default-clusterlocal config/samples/my-operator
 $EDITOR config/samples/my-operator/kustomization.yaml
 kubectl apply -k config/samples/my-operator
@@ -160,6 +162,8 @@ to suit your environment. For example, to adapt the overlay
 [in-cluster build on OpenShift in restricted network](config/samples/onload/overlays/in-cluster-build-ocp-clusterlocal):
 
 ```sh
+git clone https://github.com/Xilinx-CNS/kubernetes-onload && cd kubernetes-onload
+
 cd config/samples/onload
 cp -r overlays/in-cluster-build-ocp-clusterlocal overlays/my-onload
 $EDITOR overlays/my-onload/kustomization.yaml
@@ -179,13 +183,15 @@ Consider configuring:
 #### Onload Module in-cluster builds
 
 The Onload Operator supports all of KMM's core methods for providing compiled kernel modules to the nodes.
+
 Some working examples are provided for use with the [Onload CR](#onload-custom-resource-cr):
 
-* [dtk-ubi](config/samples/onload/onload-module/dtk-ubi) -- currently recommended for OpenShift, depends on DTK & UBI
+* [dtk-ubi](config/samples/onload/onload-module/dtk-ubi) -- currently **recommended** for OpenShift,
+  depends on DTK & UBI
 * [dtk-only](config/samples/onload/onload-module/dtk-only) -- for OpenShift in very restricted networks,
   depends only on official OpenShift DTK
 * [mkdist-direct](config/samples/onload/onload-module/mkdist-direct) -- for consistency with non-containerised
-  Onload deployments
+  Onload deployments (not recommended)
 * [ubuntu](config/samples/onload/onload-module/ubuntu) -- representative sample for non-OpenShift clusters
 
 Please see [Onload Module pre-built images](#onload-module-pre-built-images) for the alternative to building in-cluster.
@@ -207,7 +213,8 @@ The following methods may be used:
 * A user-supported method beyond the scope of this document, such as a custom kernel build or in-house OS image.
 
 > [!TIP]
-> Network interface names can be fixed with UDEV rules
+> Network interface names can be fixed with UDEV rules.
+>
 > On a RHCOS node within OpenShift, the directory `/etc/udev/rules.d/` can be written to with a `MachineConfig` CR.
 
 ### sfptpd
@@ -215,7 +222,7 @@ The following methods may be used:
 The Solarflare Enhanced PTP Daemon (sfptpd) is not managed by Onload Operator but deployment instructions are included
 in this repository.
 
-Please see [config/samples/sfptpd/](config/samples/sfptpd/).
+Please see [config/samples/sfptpd/](config/samples/sfptpd/) for documentation and examples.
 
 ## Operation
 
@@ -267,14 +274,14 @@ Environment variables:
 
 ### Example client-server with sfnettest
 
-Please see [config/samples/sfnettest].
+Please see [config/samples/sfnettest](config/samples/sfnettest).
 
 ### Using Onload profiles
 
 If you want to run your onloaded application with a runtime profile we suggest
 using a ConfigMap to set the environment variables in the pod(s).
 We have included an example definition for the 'latency' profile in
-[`config/samples/profiles/latency/`](`config/samples/profiles/latency/`) directory.
+[`config/samples/profiles/`](config/samples/profiles/) directory.
 
 To deploy a ConfigMap named `onload-latency-profile` in the current namespace:
 
@@ -299,7 +306,7 @@ spec:
 #### Converting an existing profile
 
 If you have an existing profile defined as a `.opf` file you can generate a new
-ConfigMap definition from this using the `./scripts/profile_to_configmap.sh`
+ConfigMap definition from this using the [`scripts/profile_to_configmap.sh`](scripts/profile_to_configmap.sh)
 script.
 
 `profile_to_configmap.sh` takes in a comma separated list of profiles and will
@@ -321,21 +328,25 @@ for example if you want to create a ConfigMap from a profile called
 
 Developing Onload Operator does not require building the `onload-module` image as they can be built in-cluster by KMM.
 
-To build these images outside the cluster, please see [./build/onload-module/](build/onload-module/).
+To build these images outside the cluster, please see [./build/onload-module/](build/onload-module/)
+for documentation and examples.
 
 ### OpenShift MachineConfig for sfc
 
-Please see [./scripts/machineconfig/] to deploy an out-of-tree `sfc` module in Day 0/1 (on boot).
+Please see [scripts/machineconfig/](scripts/machineconfig/) for documentation and examples
+to deploy an out-of-tree `sfc` module in Day 0/1 (on boot).
 
 ### Onload Operator & Onload Device Plugin
 
-Please see [DEVELOPING](DEVELOPING.md).
+Using Onload Operator does not require building these images as official images are available.
+
+Please see [DEVELOPING](DEVELOPING.md) documentation.
 
 ### Onload Source & Onload User
 
 Developing Onload Operator does not require building these images as official images are available.
 
-If you wish to build these images, follow ['Distributing as container image' in Onload repository's DEVELOPING](https://github.com/Xilinx-CNS/onload/blob/master/DEVELOPING.md#distributing-as-container-image).
+If you wish to build these images, please follow ['Distributing as container image' in Onload repository's DEVELOPING](https://github.com/Xilinx-CNS/onload/blob/master/DEVELOPING.md#distributing-as-container-image).
 
 ### Insecure registries
 
@@ -363,7 +374,7 @@ spec:
 
 * Reloading of the kernel modules `onload` (and optionally `sfc`) will occur on first deployment and under certain
   reconfigurations. When using AMD Solarflare interfaces for Kubernetes control plane traffic, ensure node network
-  interface configuration and workloads are prepared and regain correct configuration and connectivity after reload.
+  interface configuration and workloads will regain correct configuration and cluster connectivity after reload.
 
 * Interface names may change when switching from an in-tree to out-of-tree `sfc` kernel module. This is due to
   [changes in default interface names](https://support.xilinx.com/s/article/000034471) between versions 4 and 5.

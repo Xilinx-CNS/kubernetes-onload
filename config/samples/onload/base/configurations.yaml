@@ -9,7 +9,7 @@ nameReference:
 images:
 - path: spec/onload/userImage
   kind: Onload
-- path: spec/onload/devicePlugin/devicePluginImage
+- path: spec/devicePlugin/devicePluginImage
   kind: Onload
 - path: spec/onload/kernelMappings/kernelModuleImage
   kind: Onload
