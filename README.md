@@ -1,281 +1,303 @@
 # Onload Operator and Onload Device Plugin for Kubernetes and OpenShift
 
-NOTE: The project is under development.
+This solution accelerates workloads using Onload in existing Kubernetes and OpenShift clusters.
 
-## Prerequisites for building
+## Installation requirements
 
-1) Go version 1.21+.
-2) The binaries of `oc`, `kubectl` present in `$PATH`.
-3) Docker or a symbolic link to an API equivalent (e.g. `podman`) present in
-`$PATH`.
-4) The following exports:
-```text
-export KUBECONFIG=<Path to Kubeconfig for your deployment>
-export REGISTRY_URL=<URL for your docker registry>
-```
-5) A docker registry location that is accessible from the cluster.
+### Supported environment
 
-Do note the following deployment instructions assume seemless push/pull
-capabilities to the above registry. If your registry is not running with
-TLS setup, additional configuration will be necessary for pushing images,
-and to enable access from your deployment.
+* [OpenOnload](https://github.com/Xilinx-CNS/onload) (including EnterpriseOnload) 8.1+
+* [AMD Solarflare](https://www.solarflare.com) hardware (`sfc`)
+* OpenShift Container Platform (OCP) 4.10+ with
+  * [Kernel Module Management (KMM) Operator](https://kmm.sigs.k8s.io/) 1.1+ ([OpenShift documentation](https://docs.openshift.com/container-platform/4.14/hardware_enablement/kmm-kernel-module-management.html)
+* Both restricted network or internet-connected clusters
 
-6) The ability to pull appropriate RedHat images from Quay.io. To do so, this
-   requires the Red Hat pull secret to be setup appropriately for your
-   container builder.
+Deployment can also be performed on Kubernetes 1.23+ but full implementation details are not currently provided.
+The Onload Device Plugin is not currently designed for standalone deployment.
 
-## Caveats for deployment
+Please see Release Notes for further detail on version compatibility and feature availability.
 
-* Do note the following process will cause a reload Onload (and optionally SFC)
-  kernel modules on the deployment and uninstall. As such, network configuration
-  for the interfaces will be wiped on reload. It is therefore necessary for a
-  mechanism to enable the appropriate interfaces regain the correct
-  network-configuration post deployment. This can be achieved with DHCP or
-  machine configuration. This is particularly important for deployments
-  using Solarflare interfaces for the control plane traffic.
+### Access to container images & configuration files
 
-* SFC interface names can adjust on installation. This is because the default
-  interface names have changed from v4 to v5 of the SFC kernel module. As such,
-  make sure appropriate measures have been taken for any additional network
-  configurations that depend on this information.
+#### Terminal
 
+Your terminal requires access to:
 
-## Deploying the Onload Operator
+* Your cluster via `kubectl` or `oc`
+* A working copy of [this repository](https://github.com/Xilinx-CNS/kubernetes-onload) (optional)
 
-### Build Onload images
+This documentation standardises on `kubectl` but both are compatible: `alias kubectl=oc`.
 
-The required Onload images are: source, userland and kernel.
+Most users can benefit from the [provided container images](#provided-images) along with
+[KMM's in-cluster `onload-module` builds](#onload-module-in-cluster-builds).
+A more comprehensive development environment is required for special use cases, namely:
 
-1. Clone OpenOnload from
-[https://github.com/Xilinx-CNS/onload](https://github.com/Xilinx-CNS/onload)
-2. Create an Onload source tarball:
-```text
-scripts/onload_mkdist
-```
-3. Create Onload source and userland images, to be pushed later to the image
-registry of your choice:
-```text
-scripts/onload_mkcontainer --source $REGISTRY_URL/onload-source:latest --user $REGISTRY_URL/onload-user:latest *.tgz
-```
-By default, the Onload userland uses UBI libc. Please check and patch the
-Dockerfile if this is incompatible with your application's environment.
+* [building bespoke `onload-module` images](#onload-module-pre-built-images) outside the cluster,
+* [OpenShift MachineConfig for Day 0/1 sfc](#openshift-machineconfig-for-sfc),
+* [developing Onload](#onload-source--onload-user), and/or
+* [developing Onload Operator or Onload Device Plugin](#onload-operator--onload-device-plugin).
 
-4. Push them to the image registry:
-```text
-docker push $REGISTRY_URL/onload-source:latest
-docker push $REGISTRY_URL/onload-user:latest
-```
+#### Cluster
 
-5. In this repository, build an Onload kernel image:
-```text
-make onload-module-dtk
-ONLOAD_SOURCE_IMAGE_REPO=$REGISTRY_URL/onload-source
-ONLOAD_SOURCE_IMAGE_TAG=latest
-ONLOAD_MODULE_IMAGE_REPO=$REGISTRY_URL/onload-module
-```
+Your cluster requires access to the following [provided container images](#provided-images):
 
-Please note that the `onload-module-dtk` target is currently tailored to
-OpenShift. Please edit
-[build/onload-module/Makefile](build/onload-module/Makefile) to accommodate
-non-OpenShift kernels.
+* `onload-operator`
+* `onload-device-plugin`
+* `onload-user`
+* `onload-source` (if in-cluster builds)
+* `sfptpd` (optional)
+* `sfnettest` (optional)
+* KMM Operator & dependents
+* DTK (if in-cluster builds on OpenShift)
+  * OpenShift includes a `driver-toolkit` (DTK) image in each release. No action should be required.
 
-6. Export the following Onload information for tagging the Onload kernel image.
-```text
-export ONLOAD_VERSION=<onload-tag>
-export ONLOAD_KERNEL_VERSION=<kernel version to be built>
-```
-n.b. `onload-tag` can be of the form of a release e.g. `v8.1.0` or a git commit
-hash, and `onload_kernel_version` is expected to be of the form
-`4.18.0-372.49.1.el8_6.x86_64`.
+The cluster also requires access to the following node-specific kernel module container image(s) which may be provided
+externally or internally. If using [in-cluster builds](#onload-module-in-cluster-builds), push access to an internal
+registry will be required. Otherwise, only pull access is required if these images are
+[pre-built](#onload-module-pre-built-images).
+Please see Release Notes for further detail on feature availability.
 
+* `onload-module`
 
-7. Push the Onload kernel image (copied the autogenerated hash and kernel
-version):
-```text
-docker push $REGISTRY_URL/onload-module:$ONLOAD_VERSION-$ONLOAD_KERNEL_VERSION
-```
+When using [in-cluster builds](#onload-module-in-cluster-builds), other dependencies may be required depending on
+the method selected. These may include `ubi-minimal` container image and
+[UBI RPM repositories](https://access.redhat.com/articles/4238681).
 
+### Provided Images
 
-## SFC MachineConfig (for OpenShift Users using SFC NICs for the control plane)
+This repository's YAML configuration uses the following images by default:
 
-For users in the above configuration MachineConfig is recommended for
-controlling the loading and unloading of SFC kernel modules. This process
-ensures a clean installation/uninstallation process for Onload Operator
-by ensuring the interfaces remain operational independently.
+* [`docker.io/onload/onload-operator`](https://hub.docker.com/r/onload/onload-operator)
+* [`docker.io/onload/onload-device-plugin`](https://hub.docker.com/r/onload/onload-device-plugin)
+* [`docker.io/onload/onload-source`](https://hub.docker.com/r/onload/onload-source)
+* [`docker.io/onload/onload-user`](https://hub.docker.com/r/onload/onload-user)
+* [`docker.io/onload/sfptpd`](https://hub.docker.com/r/onload/sfptpd)
+* [`docker.io/onload/sfnettest`](https://hub.docker.com/r/onload/sfnettest)
 
-### Building SFC MachineConfig
+For restricted networks these container images can be mirrored.
 
-Appropriate MachineConfig can be generated with the following commands.
+## Deployment
 
-For users of Openshift v4.10.0-4.13.0:
+To accelerate a pod:
 
-```text
- make sfc-mc-docker-build ONLOAD_MODULE_IMAGE=$REGISTRY_URL/onload-module:$ONLOAD_VERSION-$ONLOAD_KERNEL_VERSION
+* Configure the [Onload Operator](#onload-operator)
+* Configure an [Onload Custom Resource (CR)](#onload-custom-resource-cr)
+* Configure a pod network with AMD Solarflare interfaces, ie. Multus IPVLAN or MACVAN
+* Configure the [out-of-tree `sfc` module](#out-of-tree-sfc-kernel-module)
+* [Configure your pods](#run-onloaded-applications) to use the resource provided by
+  the [Onload Device Plugin](#onload-device-plugin) and the network
+
+### Onload Operator
+
+The Onload Operator follows the [Kubernetes Operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
+pattern which links a [Kubernetes Controller](https://kubernetes.io/docs/concepts/architecture/controller/),
+implemented here in the `onload-operator` container image, to one or more Custom Resource Definitions (CRD),
+implemented here in the `Onload` *kind* of CRD.
+
+To deploy the Onload Operator, its controller container and CRD, run:
+
+```sh
+kubectl apply -k https://github.com/Xilinx-CNS/kubernetes-onload/config/default
 ```
 
-For users of OpenShift v4.14.0+:
+This deploys the following by default:
 
-```text
- make sfc-mc-docker-build ONLOAD_MODULE_IMAGE=$REGISTRY_URL/onload-module:$ONLOAD_VERSION-$ONLOAD_KERNEL_VERSION OPENSHIFT_VER=4.14.0
+* In Namespace [`onload-operator-system`](./config/default/kustomization.yaml) with prefix
+  [`onload-operator-`](./config/default/kustomization.yaml):
+  * [Onload CRD](config/crd/bases/onload.amd.com_onloads.yaml)
+  * [Operator](config/manager/kustomization.yaml) version from DockerHub.
+  * [RBAC](config/rbac) for these components
+
+The Onload Operator will not deploy the components necessary for accelerating workload pods without
+an `Onload` *kind* of Custom Resource (CR).
+
+#### Local Onload Operator images in restricted networks
+
+For restricted networks, the `onload-operator` image location will require changing from its DockerHub default.
+To run the above command using locally hosted container images, open this repository locally and use the
+[following overlay](config/samples/default-clusterlocal/kustomization.yaml):
+
+```sh
+cp -r config/samples/default-clusterlocal config/samples/my-operator
+$EDITOR config/samples/my-operator/kustomization.yaml
+kubectl apply -k config/samples/my-operator
 ```
 
-### Deploying the SFC MachineConfig
+### Onload Device Plugin
 
-```text
-make sfc-mc-deploy
+The Onload Device Plugin implements the [Kubernetes Device Plugin API](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/)
+to expose a [Kubernetes Resource](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
+named `amd.com/onload`.
+
+It is distributed as the container image `onload-device-plugin` and is deployed and configured entirely by
+the Onload Operator. You can configure the image location and its settings via the Onload Operator within
+a [Onload Custom Resource (CR)](#onload-custom-resource-cr).
+
+### Onload Custom Resource (CR)
+
+Instruct the Onload Operator to deploy the components necessary for accelerating workload pods by deploying
+a `Onload` *kind* of Custom Resource (CR).
+
+If your cluster is internet-connected OpenShift and you want to use in-cluster builds with the current version
+of OpenOnload, run:
+
+```sh
+kubectl apply -k https://github.com/Xilinx-CNS/kubernetes-onload/config/samples/onload/overlays/in-cluster-build-ocp
 ```
 
-### Prepare Kubernetes cluster
+This takes a [base `Onload` CR template](config/samples/onload/base/onload_v1alpha1_onload.yaml) and adds the
+appropriate [image versions](config/samples/onload/overlays/in-cluster-build-ocp/kustomization.yaml) and
+[in-cluster build configuration](config/samples/onload/overlays/in-cluster-build-ocp/patch-onload.yaml). To customise
+this recommended overlay further, see the variant steps below.
 
-The Onload Operator v3 depends on third-party software:
+The above overlay configures KMM to `modprobe onload` but `modprobe sfc` is also required.
+Please see [Out-of-tree `sfc` module](#out-of-tree-sfc-kernel-module) for options.
 
-1. Kernel Module Manamagent (KMM) Operator v1.1.1. For installation
-instructions please see
-[https://openshift-kmm.netlify.app/documentation/install/](official documentation).
-2. Multus CNI. A sample configuration using macvlan can be found
-[https://github.com/k8snetworkplumbingwg/multus-cni/blob/master/examples/macvlan-pod.yml](here).
+#### In-cluster builds in restricted networks
 
-Please note that `NetworkAttachmentDefinition` is used later in the definition
-of Onloaded applications.
+In restricted networks or on other versions of Kubernetes, change the container image locations and build method(s)
+to suit your environment. For example, to adapt the overlay
+[in-cluster build on OpenShift in restricted network](config/samples/onload/overlays/in-cluster-build-ocp-clusterlocal):
 
-
-### Build and deploy Onload Operator v3
-
-
-1. Create and push the Onload Operator controller image:
-```text
-make docker-build docker-push IMG=$REGISTRY_URL/operator:latest
-```
-2. Create and push the Onload Device Plugin image:
-```text
-make device-plugin-docker-build device-plugin-docker-push
-DEVICE_IMG=$REGISTRY_URL/deviceplugin:latest
-```
-3. Deploy the Onload Operator v3:
-```text
-make deploy IMG=$REGISTRY_URL/operator:latest
-```
-4. Patch the following Onload CR sample accordingly:
-```diff
-diff --git a/config/samples/onload_v1alpha1_onload.yaml
-b/config/samples/onload_v1alpha1_onload.yaml
-index 0ffba0c..2768bdc 100644
---- a/config/samples/onload_v1alpha1_onload.yaml
-+++ b/config/samples/onload_v1alpha1_onload.yaml
-@@ -55,9 +55,9 @@ spec:
-     # Example image locations using openshift local image registry.
-     kernelMappings:
-       - regexp: '^.*\.x86_64$'
-+        kernelModuleImage: $REGISTRY_URL/onload-module:$ONLOAD_VERSION-$ONLOAD_KERNEL_VERSION
-         sfc: {}
-+    userImage: $REGISTRY_URL/onload-user:latest
-+    version: $ONLOAD_VERSION
-     imagePullPolicy: Always
-   devicePlugin:
-+    devicePluginImage: $REGISTRY_URL/deviceplugin:latest
-```
-Please also make sure `devicePluginImage` is correct. Another important field
-is the node `selector`, which tells the Onload Operator where to deploy the
-Onload Device Plugin DaemonSet and Module kind (KMM).
-
-N.B. For deployments utilising our SFC MachineConfig, the following patch
-is required.
-
-```diff
-diff --git a/config/samples/onload_v1alpha1_onload.yaml b/config/samples/onload_v1alpha1_onload.yaml
-index 0ffba0c..50babed 100644
---- a/config/samples/onload_v1alpha1_onload.yaml
-+++ b/config/samples/onload_v1alpha1_onload.yaml
-@@ -56,7 +56,6 @@ spec:
-     kernelMappings:
-       - regexp: '^.*\.x86_64$'
-         kernelModuleImage: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-module:v8.1.0-${KERNEL_FULL_VERSION}
--        sfc: {}
-     userImage: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-user:v8.1.0
-     version: 8.1.0
-     imagePullPolicy: Always
+```sh
+cd config/samples/onload
+cp -r overlays/in-cluster-build-ocp-clusterlocal overlays/my-onload
+$EDITOR overlays/my-onload/kustomization.yaml
+$EDITOR overlays/my-onload/patch-onload.yaml
+kubectl apply -k overlays/my-onload
 ```
 
+Consider configuring:
 
-5. Finally, deploy the Onload CR:
-```text
-oc apply -k config/samples/
-```
+* Onload Operator & Onload Device Plugin container image tags (recommended to match)
+  * In above `kustomization.yaml`
+* Onload Source & Onload User container image tags and Onload version (all must match)
+  * In above `kustomization.yaml` & `version` attribute in `patch-onload.yaml`
+* [Onload Module build method](#onload-module-in-cluster-builds) and tag (match tag to Onload version for clarity)
+  * In above `kustomization.yaml` & `build` section in `patch-onload.yaml`
 
-## Run Onloaded application
+#### Onload Module in-cluster builds
 
-At this point, Onload is deployed at the cluster, and the users can run
-Onloaded applications, e.g.
+The Onload Operator supports all of KMM's core methods for providing compiled kernel modules to the nodes.
+Some working examples are provided for use with the [Onload CR](#onload-custom-resource-cr):
+
+* [dtk-ubi](config/samples/onload/onload-module/dtk-ubi) -- currently recommended for OpenShift, depends on DTK & UBI
+* [dtk-only](config/samples/onload/onload-module/dtk-only) -- for OpenShift in very restricted networks,
+  depends only on official OpenShift DTK
+* [mkdist-direct](config/samples/onload/onload-module/mkdist-direct) -- for consistency with non-containerised
+  Onload deployments
+* [ubuntu](config/samples/onload/onload-module/ubuntu) -- representative sample for non-OpenShift clusters
+
+Please see [Onload Module pre-built images](#onload-module-pre-built-images) for the alternative to building in-cluster.
+
+### Out-of-tree `sfc` kernel module
+
+The out-of-tree `sfc` kernel module is currently required when using the provided `onload` kernel module
+with a Solarflare card.
+
+The following methods may be used:
+
+* Configure the Onload Operator to deploy a KMM Module for `sfc`. Please see the example comment in
+  [in-cluster build configuration](config/samples/onload/overlays/in-cluster-build-ocp/patch-onload.yaml).
+
+* [OpenShift MachineConfig for Day 0/1 sfc](#openshift-machineconfig-for-sfc). This is for when newer driver features
+  are required at boot time while using OpenShift, or when Solarflare NICs are used for OpenShift machine traffic, so
+  as to avoid kernel module reloads disconnecting nodes.
+
+* A user-supported method beyond the scope of this document, such as a custom kernel build or in-house OS image.
+
+> [!TIP]
+> Network interface names can be fixed with UDEV rules
+> On a RHCOS node within OpenShift, the directory `/etc/udev/rules.d/` can be written to with a `MachineConfig` CR.
+
+### sfptpd
+
+The Solarflare Enhanced PTP Daemon (sfptpd) is not managed by Onload Operator but deployment instructions are included
+in this repository.
+
+Please see [config/samples/sfptpd/](config/samples/sfptpd/).
+
+## Operation
+
+After you have completed the [Deployment](#deployment) steps your cluster is configured with the capability to
+accelerate workloads using Onload.
+
+An easy test to verify everything is correctly configured is the
+[sfnettest example](#example-client-server-with-sfnettest).
+
+### Run Onloaded applications
+
+To accelerate your workload, configure a pod with a AMD Solarflare network interface and
+[`amd.com/onload` resource](#resource-amdcomonload):
+
 ```yaml
-apiVersion: v1
 kind: Pod
 metadata:
-  name: test
   annotations:
     k8s.v1.cni.cncf.io/networks: ipvlan-sf0
 spec:
-  restartPolicy: Never
-  securityContext:
-    runAsNonRoot: true
-    seccompProfile:
-      type: RuntimeDefault
+  ...
   containers:
-  - name: test
-    image: test:latest
-    imagePullPolicy: Always
-    command:
-    - /test
+  - ...
     resources:
       limits:
         amd.com/onload: 1
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-  nodeName: compute-0
 ```
 
-There are two key fields in the above example CR:
-1. `metadata.annotations` adds the acceleratable interfaces to the pods.
-2. `spec.containers[].resources.limits` injects Onload, i.e. devfs and \*.so
-files, and also sets `LD_PRELOAD`.
+All applications started within the pod environment will be accelerated due to the `LD_PRELOAD` environment variable.
 
-No further modifications are required to enable Onloaded applications.
+### Resource `amd.com/onload`
+
+This Kubernetes Resource automatically exposes the following to a requesting pod:
+
+Device mounts:
+
+* `/dev/onload`
+* `/dev/onload_epoll`
+* `/dev/sfc_char`
+
+Library mounts (by default in `/opt/onload/usr/lib64/`):
+
+* `libonload.so`
+* `libonload_ext.so`
+
+Environment variables:
+
+* `LD_PRELOAD=<library-mount>/libonload.so`
+
+### Example client-server with sfnettest
+
+Please see [config/samples/sfnettest].
 
 ### Using Onload profiles
 
 If you want to run your onloaded application with a runtime profile we suggest
-using a ConfigMap to set the environment variables in the pod. We have included
-and example definition for the latency profile in `config/samples/profiles`
-directory. This can be applied as so:
-```text
-oc apply -k config/samples/profiles
+using a ConfigMap to set the environment variables in the pod(s).
+We have included an example definition for the 'latency' profile in
+[`config/samples/profiles/latency/`](`config/samples/profiles/latency/`) directory.
+
+To deploy a ConfigMap named `onload-latency-profile` in the current namespace:
+
+```sh
+kubectl apply -k https://github.com/Xilinx-CNS/kubernetes-onload/config/samples/profiles
 ```
-which creates a new ConfigMap called `onload-latency-profile` in the current
-namespace.
 
-Then to use this in you pod, add the following to the container spec in your pod
-definition:
+To use this in your pod, add the following to the container spec in your pod definition:
 
-```diff
-diff --git a/testpod.yaml b/testpod.yaml
-index 5259d67..ced3b2a 100644
---- a/testpod.yaml
-+++ b/testpod.yaml
-@@ -16,6 +16,9 @@ spec:
-     imagePullPolicy: Always
-     command:
-     - /test
-+    envFrom:
-+      - configMapRef:
-+          name: onload-latency-profile
-     resources:
-       limits:
-         amd.com/onload: 1
+```yaml
+kind: Pod
+...
+spec:
+  ...
+  containers:
+  - ...
+    envFrom:
+      - configMapRef:
+          name: onload-latency-profile
 ```
 
 #### Converting an existing profile
+
 If you have an existing profile defined as a `.opf` file you can generate a new
 ConfigMap definition from this using the `./scripts/profile_to_configmap.sh`
 script.
@@ -284,14 +306,70 @@ script.
 output the text definition of the ConfigMap which can be saved into a file, or
 sent straight to the cluster. To apply the generated ConfigMap straight away
 run:
-```text
-./profile_to_configmap.sh -p /path/to/profile.opf | oc apply -f -
+
+```sh
+./scripts/profile_to_configmap.sh -p /path/to/profile.opf | kubectl apply -f -
 ```
 
 Currently the script produces ConfigMaps with a fixed naming structure,
 for example if you want to create a ConfigMap from a profile called
 `name.opf` the generated name will be `onload-name-profile`.
 
----
+## Build
+
+### Onload Module pre-built images
+
+Developing Onload Operator does not require building the `onload-module` image as they can be built in-cluster by KMM.
+
+To build these images outside the cluster, please see [./build/onload-module/](build/onload-module/).
+
+### OpenShift MachineConfig for sfc
+
+Please see [./scripts/machineconfig/] to deploy an out-of-tree `sfc` module in Day 0/1 (on boot).
+
+### Onload Operator & Onload Device Plugin
+
+Please see [DEVELOPING](DEVELOPING.md).
+
+### Onload Source & Onload User
+
+Developing Onload Operator does not require building these images as official images are available.
+
+If you wish to build these images, follow ['Distributing as container image' in Onload repository's DEVELOPING](https://github.com/Xilinx-CNS/onload/blob/master/DEVELOPING.md#distributing-as-container-image).
+
+### Insecure registries
+
+If your registry is not running with TLS configured, additional configuration may be necessary for accessing
+and pushing images. For example:
+
+```sh
+$ oc edit image.config cluster
+...
+spec:
+  registrySources:
+    insecureRegistries:
+    - image-registry.openshift-image-registry.svc:5000
+```
+
+## Caveats
+
+* The Onload Operator manages KMM resources on behalf of the user but does not provide feature parity with KMM. Examples
+  of features not included are: in-cluster container image build signing, node version freezing during ordered upgrade
+  (Onload Operator manages these labels), miscellaneous DevicePlugin configuration, configuration of registry
+  credentials (beyond existing cluster configuration), customisation of kernel module parameters and soft dependencies,
+  and customisation of Namespace and Service Account for dependent resources (instead inherited from
+  [Onload CR](#onload-custom-resource-cr)). Configuring `PreflightValidation` can be performed independently while
+  the Onload Operator is running.
+
+* Reloading of the kernel modules `onload` (and optionally `sfc`) will occur on first deployment and under certain
+  reconfigurations. When using AMD Solarflare interfaces for Kubernetes control plane traffic, ensure node network
+  interface configuration and workloads are prepared and regain correct configuration and connectivity after reload.
+
+* Interface names may change when switching from an in-tree to out-of-tree `sfc` kernel module. This is due to
+  [changes in default interface names](https://support.xilinx.com/s/article/000034471) between versions 4 and 5.
+  Ensure [appropriate measures](#out-of-tree-sfc-kernel-module) have been taken for any additional network
+  configurations that depend on this information.
+
+## Footnotes
 
 Copyright (c) 2023 Advanced Micro Devices, Inc.

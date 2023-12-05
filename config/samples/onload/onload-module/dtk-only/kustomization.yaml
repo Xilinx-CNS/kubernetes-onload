@@ -6,6 +6,3 @@ configMapGenerator:
 - name: onload-module-dockerfile
   files:
   - dockerfile=Dockerfile
-- name: onload-module-dtk-only-dockerfile
-  files:
-  - dockerfile=dtk-only.Dockerfile

@@ -40,29 +40,18 @@ subjects:
 apiVersion: onload.amd.com/v1alpha1
 kind: Onload
 metadata:
-  labels:
-    app.kubernetes.io/name: onload
-    app.kubernetes.io/instance: onload-sample
-    app.kubernetes.io/part-of: onload-operator
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: onload-operator
-  name: onload-sample
+  name: onload
 spec:
   serviceAccountName: onload-operator-sa
   selector:
     node-role.kubernetes.io/worker: ""
   onload:
-    # Example image locations using openshift local image registry.
-    kernelMappings:
-      - regexp: '^.*\.x86_64$'
-        kernelModuleImage: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-module:v8.1.0-${KERNEL_FULL_VERSION}
-        sfc: {}
-    userImage: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-user:v8.1.0
-    version: 8.1.0
+    kernelMappings: []
+    userImage: onload/onload-user
+    version:
     imagePullPolicy: Always
   devicePlugin:
-    devicePluginImage: kitchen-sink.kube.test:5000/deviceplugin:latest
+    devicePluginImage: onload/onload-device-plugin:3.0.0
     imagePullPolicy: Always
-    # Uncomment the following line to control number of pods that can request
-    # onload on a node
-    # maxPodsPerNode: 100
+    # Limit number of pods that can request Onload on a node
+    #maxPodsPerNode: 100
