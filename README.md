@@ -369,6 +369,106 @@ spec:
     - image-registry.openshift-image-registry.svc:5000
 ```
 
+## Ordered upgrades of Onload using Operator
+
+The Onload Operator has the capability to upgrade the version of Onload used by
+a CR. This can be done by updating the definition of the Onload CR once it is in
+the cluster.
+
+> [!IMPORTANT]
+> To trigger the start of an upgrade edit the Onload CR and change the `spec.onload.version` field.
+
+This can be done using `kubectl edit`, `kubectl patch` or re-applying the edited yaml file with `kubectl apply`.
+
+
+The fields that the Operator will propagate during an upgrade are:
+* `spec.onload.version`
+* `spec.onload.userImage`
+* `spec.kernelMappings`
+
+Changes to other fields are ignored by the Operator.
+
+For example using `kubectl patch` (Please note that this is just an illustrative example and shouldn't be applied to a resource in your cluster):
+```text
+kubectl patch onload onload-sample --type=merge --patch-file=/dev/stdin <<-EOF
+{
+  "spec": {
+    "onload": {
+      "kernelMappings": [
+        {
+          "kernelModuleImage": "docker.io/onload/onload-module:8.2.0",
+          "regexp": "^.*\\.x86_64$"
+        }
+      ],
+      "userImage": "docker.io/onload/onload-user:8.2.0",
+      "version": "8.2.0"
+    }
+  }
+}
+EOF
+```
+
+### Upgrade procedure
+
+The upgrade procedure occurs node-by-node, the Operator will pick a node to upgrade (next alphabetically) and start the
+procedure for this node. Once the upgrade on this node has completed, it will move onto the next node.
+
+Steps during an upgrade:
+
+1. Change to `spec.onload.version`.
+2. Operator picks next node to upgrade, or stops if all nodes are upgrade. For each node:
+3. Operator stops the Onload Device Plugin.
+4. Operator evicts pods using `amd.com/onload` resource.
+5. Operator removes the `onload` Module (and, if applicable, the `sfc` Module).
+6. Operator adds new Module(s).
+7. Operator re-starts the Onload Device Plugin.
+
+### Pods using Onload
+
+During the upgrade procedure on a Node the Onload Operator will evict all pods that have requested an `amd.com/onload`
+resource on the current node. This is done so that these application pods don't encounter unexpected errors during
+runtime and so that the upgrade completes as expected. If your application's pods are created by a controller (for
+example a Deployment) then they will get re-created once the upgrade has completed and `amd.com/onload` resources are
+available again, if your Pod was created manually it will may have to be re-created manually.
+
+The Operator assumes that all users of either the `sfc` or `onload` kernel modules are in pods that have an
+`amd.com/onload` resource, if their are pods that are using the sfc interface but do not have a resource registered
+through the device plugin please shut them down before starting the upgrade.
+
+### Limitations
+
+#### MCO
+
+The Onload Operator does not interact with the Machine Config Operator, this means that the updated sfc driver will
+have to upgraded separately from Onload. We suggest updating the sfc MachineConfig first, then when that has finished
+you should trigger the Onload upgrade. This will result in a period of time after the machine has rebooted with the new
+sfc driver version, but with an old version of Onload. Onloaded apps are not expected to work during this period, and
+you should wait until the Onload upgrade has finished before re-starting your workload.
+
+#### Rollbacks
+
+The Onload Operator does not keep a history of previous versions, so it is not possible to "rollback" an upgrade.
+If you wish to continue using an older version, you can simply re-follow the upgrade procedure but using the earlier
+version and images.
+
+#### Verification
+
+The Onload Operator does not perform an automatic validation of an upgrade. The status of the cluster should be checked
+after the upgrade has finished to ensure that things are as expected.
+
+#### Freeze
+
+Once an upgrade has started the Onload Operator will try to perform the on all nodes that match its selector. Therefore
+it is not currently possible to "freeze" a node in place while others are upgraded. If you want to have heterogeneous
+Onload versions in the same cluster then you should have multiple Onload CRs with non-overlapping node selectors, then
+each of these can be upgraded separately.
+
+#### Unloading modules
+
+Due to the Onload Operator's dependence on KMM v1 it is not possible to guarantee that a kernel module is actually
+unloaded when the Module CR is deleted. This is a known issue with KMM v1, but please try to ensure that there are no
+other users of the `onload` (or `sfc` if applicable) kernel modules when the upgrade starts.
+
 ## Caveats
 
 * The Onload Operator manages KMM resources on behalf of the user but does not provide feature parity with KMM. Examples
