@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+resources:
+- ../../base
+- ../../onload-module/dtk-only
+
+patches:
+- path: patch-onload.yaml
+
+images:
+- name: onload/onload-device-plugin
+  newName: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-device-plugin
+  newTag: 3.0.0
+
+- name: onload/onload-source
+  newName: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-source
+  newTag: 8.1.2.26
+- name: onload/onload-user
+  newName: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-user
+  newTag: 8.1.2.26
+- name: onload/onload-module
+  newName: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-module
+  newTag: 8.1.2.26-${KERNEL_FULL_VERSION}

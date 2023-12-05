@@ -2,9 +2,8 @@
 # SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 resources:
 - ../base
-#+kubebuilder:scaffold:manifestskustomizesamples
-configurations:
-- nameref.yaml
 
-patchesStrategicMerge:
-- patch-build.yaml
+nameSuffix: -sample-changeme
+
+patches:
+- path: patch-onload.yaml

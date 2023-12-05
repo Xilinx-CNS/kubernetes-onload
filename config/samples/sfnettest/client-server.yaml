@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: onload-sfnettest-server
+  namespace: default
+  annotations:
+    k8s.v1.cni.cncf.io/networks: ipvlan-sf0
+spec:
+  restartPolicy: Always
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+  - name: onload-sfnettest-server
+    # The image's default entrypoint is a sfnt-pingpong server
+    image: docker.io/onload/sfnettest:sfnettest-1.6.0-rc1
+    imagePullPolicy: Always
+    resources:
+      limits:
+        amd.com/onload: 1
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+  nodeName: compute-0
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: onload-sfnettest-client
+  namespace: default
+  annotations:
+    k8s.v1.cni.cncf.io/networks: ipvlan-sf0
+spec:
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+  - name: onload-sfnettest-client
+    image: docker.io/onload/sfnettest:sfnettest-1.6.0-rc1
+    imagePullPolicy: Always
+    command:
+    - /bin/sh
+    resources:
+      limits:
+        amd.com/onload: 1
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+  nodeName: compute-1

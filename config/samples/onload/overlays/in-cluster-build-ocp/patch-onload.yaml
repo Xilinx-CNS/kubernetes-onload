@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+apiVersion: onload.amd.com/v1alpha1
+kind: Onload
+metadata:
+  name: onload
+spec:
+  onload:
+    version: 8.1.2.26
+    kernelMappings:
+      - regexp: '^.*\.x86_64$'
+        kernelModuleImage: onload/onload-module
+        build:
+          dockerfileConfigMap:
+            name: onload-module-dockerfile
+          buildArgs:
+          - name: ONLOAD_BUILD_PARAMS
+            value: ""
+          - name: ONLOAD_SOURCE
+            value: onload/onload-source
+        # Deploy `sfc` Module CR in addition to `onload` Module CR.
+        # (Incompatible with MachineConfig approach.)
+        #sfc: {}
