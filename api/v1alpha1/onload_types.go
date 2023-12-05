@@ -151,6 +151,11 @@ type Spec struct {
 	// ServiceAccountName is the name of the service account that the objects
 	// created by the onload operator will use.
 	ServiceAccountName string `json:"serviceAccountName"`
+
+	// +optional
+	// ImagePullSecret is an optional secret that gets used by the objects
+	// created by the operator when pulling images from container registries.
+	ImagePullSecret *v1.LocalObjectReference `json:"imagePullSecret,omitempty"`
 }
 
 // OnloadStatus defines the observed state of Onload

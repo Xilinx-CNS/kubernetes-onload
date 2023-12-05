@@ -43,6 +43,8 @@ metadata:
   name: onload
 spec:
   serviceAccountName: onload-operator-sa
+  # imagePullSecret:
+  #   name: secret-name
   selector:
     node-role.kubernetes.io/worker: ""
   onload:
