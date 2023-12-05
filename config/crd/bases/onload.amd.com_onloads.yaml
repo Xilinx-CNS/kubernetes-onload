@@ -91,6 +91,19 @@ spec:
                 x-kubernetes-validations:
                 - message: SetPreload and MountOnload mutually exclusive
                   rule: '!(self.setPreload && self.mountOnload)'
+              imagePullSecret:
+                description: ImagePullSecret is an optional secret that gets used
+                  by the objects created by the operator when pulling images from
+                  container registries. Used by both the Modules (as the ImageRepoSecret
+                  field) and the Daemonset (as the ImagePullSecrets field) created
+                  by the container.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
               onload:
                 description: Onload is the specification of the version of Onload
                   to be used by this CR
