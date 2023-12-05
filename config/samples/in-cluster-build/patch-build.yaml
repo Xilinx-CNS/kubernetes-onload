@@ -8,6 +8,8 @@ spec:
   onload:
     kernelMappings:
       - regexp: '^.*\.x86_64$'
+        kernelModuleImage: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-module:v8.1.0-${KERNEL_FULL_VERSION}
+        sfc: {}
         build:
           dockerfileConfigMap:
             name: onload-module-dockerfile
