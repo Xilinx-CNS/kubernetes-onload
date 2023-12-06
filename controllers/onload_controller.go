@@ -945,7 +945,8 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 			Command: []string{
 				"/bin/sh", "-c",
 				`set -e;
-				chcon --type container_file_t --recursive /opt/onload/;`,
+				chcon --type container_file_t --recursive /opt/onload/ ||
+				echo "chcon failed. System may not be SELinux enabled.";`,
 			},
 		},
 	}
