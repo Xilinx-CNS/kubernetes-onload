@@ -10,6 +10,8 @@ and Red Hat documentation:
 
 The following steps implement a configuration based on KMM Operator's `mcproducer`, which is documented in [4.13.5. MCO yaml creation](https://access.redhat.com/documentation/en-us/openshift_container_platform/4.14/html/specialized_hardware_and_driver_enablement/kernel-module-management-operator#kmm-day1-mco-yaml-creation_kernel-module-management-operator).
 
+![Diagram of components in this method](../../docs/mc-sfc-diagram.svg)
+
 An example Butane configuration file is provided ([99-sfc-machineconfig.bu](99-sfc-machineconfig.bu)) in the
 format of a template which a convenience script provides variable substitution for your cluster environment.
 

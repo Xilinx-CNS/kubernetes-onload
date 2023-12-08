@@ -32,7 +32,7 @@ systemd:
         [Install]
         WantedBy=multi-user.target
 
-    - name: sfc-day-zero-loading.service
+    - name: sfc-pull-image.service
       enabled: true
       contents: |
         [Unit]
@@ -52,6 +52,7 @@ systemd:
 
         [Install]
         WantedBy=multi-user.target
+
     - name: crio-wipe.service
       enabled: false
       mask: true
@@ -63,11 +64,11 @@ storage:
           user:
             name: root
           contents:
-            local: sfc-replace-kernel.sh
+            local: sfc-replace-kernel-module.sh
         - path: /usr/local/bin/sfc-pull-kernel-module-image.sh
           mode: 0493
           overwrite: true
           user:
             name: root
           contents:
-            local:  sfc-pull-kernel-module-image.sh
+            local: sfc-pull-kernel-module-image.sh
