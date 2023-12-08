@@ -261,9 +261,16 @@ Library mounts (by default in `/opt/onload/usr/lib64/`):
 * `libonload.so`
 * `libonload_ext.so`
 
-Environment variables:
+Environment variables (if `setPreload` is true):
 
 * `LD_PRELOAD=<library-mount>/libonload.so`
+
+Binary mounts (if `mountOnload` is true, by default in `/opt/onload/usr/bin/`)
+
+* `onload`
+
+If you wish to customise where files are mounted in the container's filesystem this can be configured with the fields
+of `spec.devicePlugin` in an Onload CR.
 
 ### Example client-server with sfnettest
 
