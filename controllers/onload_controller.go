@@ -849,7 +849,8 @@ func createModule(
 					Version:         onload.Spec.Onload.Version,
 				},
 			},
-			Selector: onload.Spec.Selector,
+			ImageRepoSecret: onload.Spec.ImagePullSecret,
+			Selector:        onload.Spec.Selector,
 		},
 	}
 
@@ -1106,6 +1107,7 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 					Labels: dsLabels,
 				},
 				Spec: corev1.PodSpec{
+					ImagePullSecrets:   []corev1.LocalObjectReference{},
 					ServiceAccountName: onload.Spec.ServiceAccountName,
 					Containers: []corev1.Container{
 						devicePluginContainer,
@@ -1141,6 +1143,10 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 				},
 			},
 		},
+	}
+
+	if onload.Spec.ImagePullSecret != nil {
+		devicePlugin.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{*onload.Spec.ImagePullSecret}
 	}
 
 	err = controllerutil.SetControllerReference(onload, devicePlugin, r.Scheme)

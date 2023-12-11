@@ -850,5 +850,27 @@ var _ = Describe("onload controller", func() {
 				"-libMountPath=qux",
 			),
 		)
+
+		It("should pass through imagepullsecret", func() {
+			devicePlugin := appsv1.DaemonSet{}
+			devicePluginName := types.NamespacedName{
+				Name:      onload.Name + "-onload-device-plugin-ds",
+				Namespace: onload.Namespace,
+			}
+
+			onload.Spec.ImagePullSecret = &corev1.LocalObjectReference{Name: "Steven"}
+			Expect(k8sClient.Create(ctx, onload)).To(BeNil())
+
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, devicePluginName, &devicePlugin)
+				return err == nil
+			}, timeout, pollingInterval).Should(BeTrue())
+
+			Expect(devicePlugin.Spec.Template.Spec.ImagePullSecrets).Should(
+				ContainElement(MatchFields(IgnoreExtras, Fields{
+					"Name": Equal("Steven"),
+				})),
+			)
+		})
 	})
 })
