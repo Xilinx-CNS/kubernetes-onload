@@ -1,6 +1,6 @@
-# Onload Operator and Onload Device Plugin for Kubernetes and OpenShift
+# KubernetesOnload™
 
-Use Onload to accelerate your workloads in Kubernetes and OpenShift clusters.
+Use k8sOnload™ to accelerate your workloads in Kubernetes and OpenShift clusters.
 
 ## Installation requirements
 
