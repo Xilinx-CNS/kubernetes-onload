@@ -105,7 +105,7 @@ implemented here in the `Onload` *kind* of CRD.
 To deploy the Onload Operator, its controller container and CRD, run:
 
 ```sh
-kubectl apply -k https://github.com/Xilinx-CNS/kubernetes-onload/config/default
+kubectl apply -k https://github.com/Xilinx-CNS/kubernetes-onload/config/default?ref=v3.0
 ```
 
 This deploys the following by default:
@@ -126,7 +126,7 @@ To run the above command using locally hosted container images, open this reposi
 [following overlay](config/samples/default-clusterlocal/kustomization.yaml):
 
 ```sh
-git clone https://github.com/Xilinx-CNS/kubernetes-onload && cd kubernetes-onload
+git clone -b v3.0 https://github.com/Xilinx-CNS/kubernetes-onload && cd kubernetes-onload
 
 cp -r config/samples/default-clusterlocal config/samples/my-operator
 $EDITOR config/samples/my-operator/kustomization.yaml
@@ -152,7 +152,7 @@ If your cluster is internet-connected OpenShift and you want to use in-cluster b
 of OpenOnload, run:
 
 ```sh
-kubectl apply -k https://github.com/Xilinx-CNS/kubernetes-onload/config/samples/onload/overlays/in-cluster-build-ocp
+kubectl apply -k https://github.com/Xilinx-CNS/kubernetes-onload/config/samples/onload/overlays/in-cluster-build-ocp?ref=v3.0
 ```
 
 This takes a [base `Onload` CR template](config/samples/onload/base/onload_v1alpha1_onload.yaml) and adds the
@@ -170,7 +170,7 @@ to suit your environment. For example, to adapt the overlay
 [in-cluster build on OpenShift in restricted network](config/samples/onload/overlays/in-cluster-build-ocp-clusterlocal):
 
 ```sh
-git clone https://github.com/Xilinx-CNS/kubernetes-onload && cd kubernetes-onload
+git clone -b v3.0 https://github.com/Xilinx-CNS/kubernetes-onload && cd kubernetes-onload
 
 cd config/samples/onload
 cp -r overlays/in-cluster-build-ocp-clusterlocal overlays/my-onload
@@ -301,7 +301,7 @@ We have included an example definition for the 'latency' profile in
 To deploy a ConfigMap named `onload-latency-profile` in the current namespace:
 
 ```sh
-kubectl apply -k https://github.com/Xilinx-CNS/kubernetes-onload/config/samples/profiles
+kubectl apply -k https://github.com/Xilinx-CNS/kubernetes-onload/config/samples/profiles?ref=v3.0
 ```
 
 To use this in your pod, add the following to the container spec in your pod definition:
