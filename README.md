@@ -1,6 +1,6 @@
 # KubernetesOnload™
 
-Use k8sOnload™ to accelerate your workloads in Kubernetes and OpenShift clusters.
+Use OpenOnload® or EnterpriseOnload® to accelerate your workloads in Kubernetes and OpenShift clusters.
 
 ## Installation requirements
 
