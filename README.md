@@ -87,6 +87,14 @@ To accelerate a pod:
 * [Configure your pods](#run-onloaded-applications) to use the resource provided by
   the [Onload Device Plugin](#onload-device-plugin) and the network
 
+Kubernetes objects deployed (simplified):
+
+![Diagram of Kubernetes objects](docs/obj-diagram.svg)
+
+Pods & devices on Nodes:
+
+![Diagram of Pods & devices on Nodes](docs/pod-diagram.svg)
+
 ### Onload Operator
 
 The Onload Operator follows the [Kubernetes Operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
