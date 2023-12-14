@@ -36,7 +36,8 @@ metadata:
                     }
                   },
                   "kernelModuleImage": "image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-module:8.1.2.26-${KERNEL_FULL_VERSION}",
-                  "regexp": "^.*\\.x86_64$"
+                  "regexp": "^.*\\.x86_64$",
+                  "sfc": {}
                 }
               ],
               "userImage": "docker.io/onload/onload-user:8.1.2.26-ubi8",
@@ -50,7 +51,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-12-19T12:05:14Z"
+    createdAt: "2024-01-03T12:34:25Z"
     operators.operatorframework.io/builder: operator-sdk-v1.31.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: onload-operator.v3.0.0

@@ -5,19 +5,54 @@ kind: Onload
 metadata:
   name: onload
 spec:
+  # For descriptions of top-level properties,
+  # see ../base/onload_v1alpha1_onload.yaml
   onload:
     version: 8.1.2.26
+
+    # Property descriptions for the version running in your cluster is available
+    # via the command `kubectl explain onload.spec.onload.kernelMappings`.
+
+    # A subset of KMM properties.
+    # Refer to KMM documentation for KernelModuleImage, Regexp, and BuildArgs.
     kernelMappings:
+
+        # Regexp is a regular expression that is used to match against the
+        # kernel versions of the nodes in the cluster.
+        # Use also in place of literal strings. Required.
       - regexp: '^.*\.x86_64$'
+
+        # KernelModuleImage is the image that contains the out-of-tree kernel
+        # modules used by Onload. Absent image tags may be built by KMM.
+        # Required.
         kernelModuleImage: onload/onload-module
+
+        # Build specifies the parameters that are to be passed to the Kernel
+        # Module Management operator when building the images that contain the
+        # module. The build process creates a new image which will be written to
+        # the location specified by the `KernelModuleImage` parameter. If empty,
+        # no builds will take place. Optional.
         build:
+
+          # BuildArgs is an array of build variables that are provided to the
+          # image building backend.
+          # Optional. When used, both `name` & `value` are required.
+          buildArgs:
+
+            # Example Dockerfile ARG.
+            # String appended to `onload_build` script command. Optional.
+            - name: ONLOAD_BUILD_PARAMS
+              value: ""
+
+            # Example Dockerfile ARG.
+            # Location of `onload-source` container image. Required.
+            - name: ONLOAD_SOURCE
+              value: onload/onload-source
+
+          # ConfigMap that holds Dockerfile contents. Required.
           dockerfileConfigMap:
             name: onload-module-dockerfile
-          buildArgs:
-          - name: ONLOAD_BUILD_PARAMS
-            value: ""
-          - name: ONLOAD_SOURCE
-            value: onload/onload-source
-        # Deploy `sfc` Module CR in addition to `onload` Module CR.
-        # (Incompatible with MachineConfig approach.)
-        #sfc: {}
+
+        # SFC optionally specifies that the controller will manage the SFC
+        # kernel. Incompatible with boot-time loading approaches. Optional.
+        sfc: {}
