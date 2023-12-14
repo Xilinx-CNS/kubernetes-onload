@@ -34,26 +34,28 @@ spec:
           metadata:
             type: object
           spec:
-            description: Spec is the top-level specification for onload and related
-              products that are controlled by the onload operator
+            description: Spec is the top-level specification for Onload and related
+              products that are controlled by the Onload Operator
             properties:
               devicePlugin:
-                description: DevicePlugin is the specification of the device plugin
-                  that will add a new onload resource into the cluster.
+                description: DevicePlugin is further specification for the Onload
+                  Device Plugin which uses the device plugin framework to provide
+                  an `amd.com/onload` resource. Image location is not configured here;
+                  see Onload Operator deployment.
                 properties:
                   baseMountPath:
                     default: /opt/onload
-                    description: BaseMountPath is a prefix to be applied to all onload
+                    description: BaseMountPath is a prefix to be applied to all Onload
                       file mounts in the container's filesystem.
                     type: string
                   binMountPath:
                     default: /usr/bin
-                    description: BinMountPath is the location to mount onload binaries
+                    description: BinMountPath is the location to mount Onload binaries
                       in the container's filesystem.
                     type: string
                   hostOnloadPath:
                     default: /opt/onload/
-                    description: HostOnloadPath is the base location of onload files
+                    description: HostOnloadPath is the base location of Onload files
                       on the host filesystem.
                     type: string
                   imagePullPolicy:
@@ -62,7 +64,7 @@ spec:
                     type: string
                   libMounthPath:
                     default: /usr/lib64
-                    description: LibMountPath is the location to mount onload libraries
+                    description: LibMountPath is the location to mount Onload libraries
                       in the container's filesystem.
                     type: string
                   maxPodsPerNode:
@@ -70,7 +72,7 @@ spec:
                     description: MaxPodsPerNode is the number of Kubernetes devices
                       that the Onload Device Plugin should register with the kubelet.
                       Notionally this is equivalent to the number of pods that can
-                      request an onload resource on each node.
+                      request an Onload resource on each node.
                     type: integer
                   mountOnload:
                     default: false
@@ -90,7 +92,7 @@ spec:
                 - message: SetPreload and MountOnload mutually exclusive
                   rule: '!(self.setPreload && self.mountOnload)'
               onload:
-                description: Onload is the specification of the version of onload
+                description: Onload is the specification of the version of Onload
                   to be used by this CR
                 properties:
                   imagePullPolicy:
@@ -109,7 +111,7 @@ spec:
                             building the images that contain the module. The build
                             process creates a new image which will be written to the
                             location specified by the `KernelModuleImage` parameter.
-                            If empty no builds will take place.
+                            If empty, no builds will take place.
                           properties:
                             buildArgs:
                               description: BuildArgs is an array of build variables
@@ -142,16 +144,18 @@ spec:
                           type: object
                         kernelModuleImage:
                           description: KernelModuleImage is the image that contains
-                            the out-of-tree kernel modules used by Onload.
+                            the out-of-tree kernel modules used by Onload. Absent
+                            image tags may be built by KMM.
                           type: string
                         regexp:
                           description: Regexp is a regular expression that is used
                             to match against the kernel versions of the nodes in the
-                            cluster
+                            cluster. Use also in place of literal strings.
                           type: string
                         sfc:
                           description: SFC optionally specifies that the controller
-                            will manage the SFC kernel module.
+                            will manage the SFC kernel module. Incompatible with boot-time
+                            loading approaches.
                           type: object
                       required:
                       - kernelModuleImage
@@ -160,10 +164,10 @@ spec:
                     type: array
                   userImage:
                     description: UserImage is the image that contains the built userland
-                      objects, used by the cplane and deviceplugin DaemonSets.
+                      objects, used within the Onload Device Plugin DaemonSet.
                     type: string
                   version:
-                    description: Version string to associate with this onload CR.
+                    description: Version string to associate with this Onload CR.
                     type: string
                 required:
                 - kernelMappings
@@ -173,12 +177,12 @@ spec:
               selector:
                 additionalProperties:
                   type: string
-                description: Selector defines the set of nodes that this onload CR
+                description: Selector defines the set of nodes that this Onload CR
                   will run on.
                 type: object
               serviceAccountName:
                 description: ServiceAccountName is the name of the service account
-                  that the objects created by the onload operator will use.
+                  that the objects created by the Onload Operator will use.
                 type: string
             required:
             - devicePlugin
@@ -187,8 +191,8 @@ spec:
             - serviceAccountName
             type: object
           status:
-            description: Status contains the statuses for onload and related products
-              that are controlled by the onload operator
+            description: Status contains the statuses for Onload and related products
+              that are controlled by the Onload Operator
             properties:
               conditions:
                 description: Conditions store the status conditions of Onload
@@ -260,10 +264,10 @@ spec:
                   type: object
                 type: array
               devicePlugin:
-                description: Status of the device plugin
+                description: Status of Onload Device Plugin
                 type: object
               onload:
-                description: Status of onload components
+                description: Status of Onload components
                 type: object
             required:
             - devicePlugin

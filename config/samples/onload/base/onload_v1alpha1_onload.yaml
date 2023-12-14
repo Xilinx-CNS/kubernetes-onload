@@ -37,27 +37,86 @@ subjects:
 - kind: ServiceAccount
   name: onload-operator-sa
 ---
+# Property descriptions for the Onload CRD version running in your cluster
+# is available via the command `kubectl explain onload.spec`.
 apiVersion: onload.amd.com/v1alpha1
 kind: Onload
+
+# Standard object's metadata.
 metadata:
   name: onload
+
+# Spec is the top-level specification for Onload and related products that
+# are controlled by the Onload Operator. Required.
 spec:
+
+  # ServiceAccountName is the name of the service account that the objects
+  # created by the Onload Operator will use. Required.
   serviceAccountName: onload-operator-sa
+
+  # Selector defines the set of nodes that this Onload CR will run on. Required.
   selector:
+
+    # Example node label
     node-role.kubernetes.io/worker: ""
+
+  # Onload is the specification of the version of Onload to be used by this CR.
+  # Required.
   onload:
+
+    # KernelMappings is a list of pairs of kernel versions and container images.
+    # This allows for flexibility when there are heterogenous kernel versions on
+    # the nodes in the cluster. Required. For descriptions of contents,
+    # see ../overlays/in-cluster-build-ocp/patch-onload.yaml
     kernelMappings: []
+
+    # UserImage is the image that contains the built userland objects, used
+    # within the Onload Device Plugin DaemonSet. Required.
     userImage: onload/onload-user
-    version:
+
+    # Version string to associate with this Onload CR. Required.
+    version: # eg. 8.0.0.0
+
+    # ImagePullPolicy is the policy used when pulling images. Optional.
     imagePullPolicy: Always
+
+  # DevicePlugin is further specification for the Onload Device Plugin which
+  # uses the device plugin framework to provide an `amd.com/onload` resource.
+  # Image location is not configured here; see Onload Operator deployment.
+  # Required.
   devicePlugin:
+
+    # ImagePullPolicy is the policy used when pulling images. Optional.
     imagePullPolicy: Always
-    # Limit number of pods that can request Onload on a node
+
+    # MaxPodsPerNode is the number of Kubernetes devices that the Onload Device
+    # Plugin should register with the kubelet. Notionally this is equivalent to
+    # the number of pods that can request an Onload resource on each node.
+    # Optional.
     #maxPodsPerNode: 100
-    # Uncomment to select whether LD_PRELOAD should be set by the device plugin
-    # preload: true
-    # mountOnload: false
-    # hostOnloadPath: /opt/onload
-    # baseMountPath: /opt/onload
-    # binMountPath: /usr/bin
-    # libMountPath: /usr/lib64
+
+    # Preload determines whether the Onload Device Plugin will set LD_PRELOAD
+    # for pods using Onload. Mutually exclusive with MountOnload. Optional.
+    #preload: true
+
+    # MountOnload is used by the Onload Device Plugin to decide whether to mount
+    # the `onload` script as a file in the container's filesystem. `onload` is
+    # mounted at `<baseMountPath>/<binMountpath>` Mutually exclusive with
+    # Preload. Optional.
+    #mountOnload: false
+
+    # HostOnloadPath is the base location of Onload files on the host
+    # filesystem. Optional.
+    #hostOnloadPath: /opt/onload
+
+    # BaseMountPath is a prefix to be applied to all Onload file mounts in the
+    # container's filesystem. Optional.
+    #baseMountPath: /opt/onload
+
+    # BinMountPath is the location to mount Onload binaries in the container's
+    # filesystem. Optional.
+    #binMountPath: /usr/bin
+
+    # LibMountPath is the location to mount Onload libraries in the container's
+    # filesystem. Optional.
+    #libMountPath: /usr/lib64
