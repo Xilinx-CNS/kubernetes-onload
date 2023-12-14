@@ -34,7 +34,7 @@ Run:
 
 ```sh
 #export OPENSHIFT_VER=4.14.0 # Default is v4.10.0 to 4.13.0
-make sfc-mc-build ONLOAD_MODULE_IMAGE=$REGISTRY_BASE/onload-module:$ONLOAD_VERSION-$ONLOAD_KERNEL_VERSION
+make sfc-mc-build ONLOAD_MODULE_IMAGE=$REGISTRY_BASE/onload-module:$ONLOAD_VERSION-$KERNEL_FULL_VERSION
 ```
 
 ### Docker method
@@ -48,7 +48,7 @@ Run:
 
 ```sh
 #export OPENSHIFT_VER=4.14.0 # Default is v4.10.0 to 4.13.0
-make sfc-mc-docker-build ONLOAD_MODULE_IMAGE=$REGISTRY_BASE/onload-module:$ONLOAD_VERSION-$ONLOAD_KERNEL_VERSION
+make sfc-mc-docker-build ONLOAD_MODULE_IMAGE=$REGISTRY_BASE/onload-module:$ONLOAD_VERSION-$KERNEL_FULL_VERSION
 ```
 
 ## Deploying the SFC MachineConfig

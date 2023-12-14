@@ -16,14 +16,15 @@ RUN mkdir -p /build/onload
 RUN tar xzf onload.tar.gz -C /build/onload --strip-components=1
 WORKDIR /build/onload/
 
-ENV i_prefix=/opt
-RUN scripts/onload_build --kernel --kernelver $KERNEL_FULL_VERSION $ONLOAD_BUILD_PARAMS && \
-    scripts/onload_install --nobuild --kernelfiles --kernelver $KERNEL_FULL_VERSION && \
-    make -j8 -C src/driver/linux_net CONFIG_SFC_VDPA= CONFIG_SFC_MTD= KVER=$KERNEL_FULL_VERSION && \
-    /sbin/depmod -b /opt $KERNEL_FULL_VERSION
+RUN scripts/onload_build --kernel --kernelver $KERNEL_FULL_VERSION $ONLOAD_BUILD_PARAMS
+RUN scripts/onload_install --nobuild --kernelfiles --kernelver $KERNEL_FULL_VERSION
+RUN depmod $KERNEL_FULL_VERSION
 
 
 FROM $UBI_BASE
-ARG KERNEL_VERSION
-RUN microdnf install -y kmod && dnf clean all
-COPY --from=builder /opt/lib/modules/ /opt/lib/modules/
+ARG KERNEL_FULL_VERSION
+RUN microdnf install -y kmod && microdnf clean all
+COPY --from=builder /lib/modules/$KERNEL_FULL_VERSION/modules* /opt/lib/modules/$KERNEL_FULL_VERSION/
+COPY --from=builder /lib/modules/$KERNEL_FULL_VERSION/extra /opt/lib/modules/$KERNEL_FULL_VERSION/extra
+RUN ln -s /lib/modules/$KERNEL_FULL_VERSION/kernel /opt/lib/modules/$KERNEL_FULL_VERSION/kernel
+

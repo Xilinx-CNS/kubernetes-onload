@@ -22,15 +22,19 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     git \
     make \
     gcc \
-    "linux-headers-$KERNEL_VERSION"
+    "linux-headers-$KERNEL_FULL_VERSION"
 
 COPY --from=onload-source / /opt/onload
 WORKDIR /opt/onload
-ENV i_prefix=/opt
-RUN scripts/onload_build --kernel --kernelver $KERNEL_FULL_VERSION $ONLOAD_BUILD_PARAMS && \
-    scripts/onload_install --nobuild --kernelfiles --kernelver $KERNEL_FULL_VERSION
+RUN scripts/onload_build --kernel --kernelver $KERNEL_FULL_VERSION $ONLOAD_BUILD_PARAMS
+RUN scripts/onload_install --nobuild --kernelfiles --kernelver $KERNEL_FULL_VERSION
+RUN depmod $KERNEL_FULL_VERSION
 
 
 FROM $UBUNTU_IMAGE
-COPY --from=builder /opt/lib/modules/ /opt/lib/modules/
-RUN /sbin/depmod -b /opt
+ARG KERNEL_FULL_VERSION
+RUN apt-get update && apt-get install -y kmod && apt-get clean
+COPY --from=builder /lib/modules/$KERNEL_FULL_VERSION/modules* /opt/lib/modules/$KERNEL_FULL_VERSION/
+COPY --from=builder /lib/modules/$KERNEL_FULL_VERSION/extra /opt/lib/modules/$KERNEL_FULL_VERSION/extra
+RUN ln -s /lib/modules/$KERNEL_FULL_VERSION/kernel /opt/lib/modules/$KERNEL_FULL_VERSION/kernel
+
