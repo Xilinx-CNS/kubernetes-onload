@@ -147,6 +147,7 @@ a [Onload Custom Resource (CR)](#onload-custom-resource-cr).
 
 Instruct the Onload Operator to deploy the components necessary for accelerating workload pods by deploying
 a `Onload` *kind* of Custom Resource (CR).
+For its schema, refer to [`Onload` Custom Resource Definition (CRD)](docs/crd.md).
 
 If your cluster is internet-connected OpenShift and you want to use in-cluster builds with the current version
 of OpenOnload, run:
