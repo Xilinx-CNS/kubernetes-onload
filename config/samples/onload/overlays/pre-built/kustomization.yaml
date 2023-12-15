@@ -3,7 +3,13 @@
 resources:
 - ../../base
 
-nameSuffix: -sample-changeme
-
 patches:
 - path: patch-onload.yaml
+
+images:
+- name: onload/onload-user
+  newName: docker.io/onload/onload-user
+  newTag: 8.1.2.26
+
+# `onload-source` not used by pre-built images.
+# `onload-module` specified in `patch-onload.yaml` with literal string method.
