@@ -6,7 +6,7 @@ metadata:
   name: onload-sfnettest-server
   namespace: default
   annotations:
-    k8s.v1.cni.cncf.io/networks: ipvlan-sf0
+    k8s.v1.cni.cncf.io/networks: ipvlan-bond0
 spec:
   restartPolicy: Always
   securityContext:
@@ -34,7 +34,7 @@ metadata:
   name: onload-sfnettest-client
   namespace: default
   annotations:
-    k8s.v1.cni.cncf.io/networks: ipvlan-sf0
+    k8s.v1.cni.cncf.io/networks: ipvlan-bond0
 spec:
   restartPolicy: Never
   securityContext:
