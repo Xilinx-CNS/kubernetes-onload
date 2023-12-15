@@ -1,6 +1,6 @@
 # KubernetesOnload™ v3.0.0 Releases notes
 
-## Major feature release of k8sOnload™.
+## Major feature release of k8sOnload™
 
 This software package is the v3.0.0 release of the KubernetesOnload Operator
 and Device Plugin. This is a complete rewrite of KubernetesOnload v2.0.0. The
@@ -30,7 +30,7 @@ As an example of the ease with which application workloads may be accelerated,
 the following snippet of pod definition YAML requests Onload acceleration by
 the installed version of Onload.
 
-```
+```yaml
     resources:
       limits:
         amd.com/onload: 1
@@ -73,7 +73,6 @@ supplied with this release will pull in.
 | OpenOnload | 8.1.2           |
 | sfnettest  | 1.6.0-rc2       |
 | sfptpd     | 3.7.1.1002      |
-
 
 Upgrading to new versions of Onload, for example, can be achieved simply
 by adjusting cluster configuration files with the new desired version number.
@@ -168,9 +167,9 @@ do not necessarily have such a resource readily available.
 Therefore for non-OpenShift platforms it will be necessary to do one of
 the following:
 
-  - Create one's own container image base for kernel builds
-  - Build in-cluster with the node-host's own kernel headers
-  - Build module container images out of cluster with custom scripting.
+* Create one's own container image base for kernel builds
+* Build in-cluster with the node-host's own kernel headers
+* Build module container images out of cluster with custom scripting.
 
 ## Prerequisites
 
@@ -185,7 +184,7 @@ Onload:
 
 The canonical documentation for KubernetesOnload is the
 [README](https://github.com/Xilinx-CNS/kubernetes-onload#readme) file in the
-source tree. Additional documents in the github repository provide advice on
+source tree. Additional documents in the GitHub repository provide advice on
 building from source. Further documents are authoritative on the orchestrated
 components, namely:
 
@@ -204,11 +203,11 @@ accelerate traffic over the Kubernetes software defined network (SDN).
 
 In particular, the following are not supported:
 
-  - Calico CNI
-  - MetalLB
-  - pod-to-pod traffic within a node
-  - upgrading from the Onload Operator v2.0.0 or earlier without
-    first uninstallating it
+* Calico CNI
+* MetalLB
+* pod-to-pod traffic within a node
+* upgrading from the Onload Operator v2.0.0 or earlier without
+  first removing it
 
 ## Major changes since KubernetesOnload v2.0.0
 
@@ -218,17 +217,17 @@ deployment scheme.
 
 Notable changes:
 
-  - Injection of and acceleration by Onload of a container workload is
-    automatic once declaratively requested in the pod definition, with
-    no need to modify the application container.
-  - Kernel module management is automated
-  - Onload node manager not required
+* Injection of and acceleration by Onload of a container workload is
+  automatic once declaratively requested in the pod definition, with
+  no need to modify the application container.
+* Kernel module management is automated
+* Onload node manager not required
 
 ## Open source project and support status
 
 KubernetesOnload 3.0.0 has been developed as an open source project. Only
 KubernetesOnload releases and OpenOnload releases announced at
-<https://www.xilinx.com/support/download/onload> are suported by AMD
+<https://www.xilinx.com/support/download/onload> are supported by AMD
 Solarflare's Application Engineering team but we welcome engagement with any
 work in progress at <https://github.com/Xilinx-CNS/kubernetes-onload>.
 
@@ -237,7 +236,7 @@ AMD Solarflare NICs, please contact <support-nic@amd.com>.
 
 ## Footnotes
 
-```
+```yaml
 SPDX-License-Identifier: MIT
 SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 ```
