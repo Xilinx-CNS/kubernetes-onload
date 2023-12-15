@@ -9,7 +9,7 @@ Use OpenOnload® or EnterpriseOnload® to accelerate your workloads in Kubernete
 * [OpenOnload](https://github.com/Xilinx-CNS/onload) (including EnterpriseOnload) 8.1+
 * [AMD Solarflare](https://www.solarflare.com) hardware (`sfc`)
 * OpenShift Container Platform (OCP) 4.10+ with
-  * [Kernel Module Management (KMM) Operator](https://kmm.sigs.k8s.io/) 1.1+ ([OpenShift documentation](https://docs.openshift.com/container-platform/4.14/hardware_enablement/kmm-kernel-module-management.html)
+  * [Kernel Module Management (KMM) Operator](https://kmm.sigs.k8s.io/) 1.1 ([OpenShift documentation](https://docs.openshift.com/container-platform/4.14/hardware_enablement/kmm-kernel-module-management.html)
 * Both restricted network or internet-connected clusters
 
 Deployment can also be performed on Kubernetes 1.23+ but full implementation details are not currently provided.
