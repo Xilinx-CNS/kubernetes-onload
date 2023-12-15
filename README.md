@@ -15,7 +15,7 @@ Use OpenOnload® or EnterpriseOnload® to accelerate your workloads in Kubernete
 Deployment can also be performed on Kubernetes 1.23+ but full implementation details are not currently provided.
 The Onload Device Plugin is not currently designed for standalone deployment.
 
-Please see Release Notes for further detail on version compatibility and feature availability.
+Please see [Release Notes](ReleaseNotes.md) for further detail on version compatibility and feature availability.
 
 ### Access to container images & configuration files
 
@@ -55,7 +55,7 @@ The cluster also requires access to the following node-specific kernel module co
 externally or internally. If using [in-cluster builds](#onload-module-in-cluster-builds), push access to an internal
 registry will be required. Otherwise, only pull access is required if these images are
 [pre-built](#onload-module-pre-built-images).
-Please see Release Notes for further detail on feature availability.
+Please see [Release Notes](ReleaseNotes.md) for further detail on feature availability.
 
 * `onload-module`
 
@@ -388,8 +388,8 @@ the cluster.
 
 This can be done using `kubectl edit`, `kubectl patch` or re-applying the edited yaml file with `kubectl apply`.
 
-
 The fields that the Operator will propagate during an upgrade are:
+
 * `spec.onload.version`
 * `spec.onload.userImage`
 * `spec.kernelMappings`
@@ -397,7 +397,8 @@ The fields that the Operator will propagate during an upgrade are:
 Changes to other fields are ignored by the Operator.
 
 For example using `kubectl patch` (Please note that this is just an illustrative example and shouldn't be applied to a resource in your cluster):
-```text
+
+```json
 kubectl patch onload onload-sample --type=merge --patch-file=/dev/stdin <<-EOF
 {
   "spec": {
