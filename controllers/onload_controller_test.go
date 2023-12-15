@@ -611,7 +611,7 @@ var _ = Describe("onload controller", func() {
 		It("should create one Onload module", func() {
 			createdModule := kmm.Module{}
 			moduleName := types.NamespacedName{
-				Name:      onload.Name + "-onload-module",
+				Name:      onload.Name + "-module",
 				Namespace: onload.Namespace,
 			}
 
@@ -652,7 +652,7 @@ var _ = Describe("onload controller", func() {
 
 			By("checking for the existence of each module")
 			moduleName := types.NamespacedName{
-				Name:      onload.Name + "-onload-module",
+				Name:      onload.Name + "-module",
 				Namespace: onload.Namespace,
 			}
 			Eventually(func() bool {
@@ -661,7 +661,7 @@ var _ = Describe("onload controller", func() {
 			}, timeout, pollingInterval).Should(BeTrue())
 
 			moduleName = types.NamespacedName{
-				Name:      onload.Name + "-sfc-module",
+				Name:      onload.Name + "-sfcmod",
 				Namespace: onload.Namespace,
 			}
 			Eventually(func() bool {
@@ -686,6 +686,30 @@ var _ = Describe("onload controller", func() {
 					"Name": Equal(onload.Name),
 					"UID":  Equal(onload.UID),
 				})))
+		})
+
+		It("shouldn't create a module if the name is too long", func() {
+			createdModule := kmm.Module{}
+
+			// Maximum value of len(module.Name)+len(module.Namespace) is 39
+			// len("test-ns-XXXXX")  = 13
+			// len("-module") = 7
+			// 39 - (13 + 7) = 19
+			// We want: len(onload.Name) >= 19
+			onload.ObjectMeta.Name = "onload01234567890123"
+			Expect(len(onload.Name)).Should(BeNumerically(">=", 19))
+			By("creating an onload CR")
+			Expect(k8sClient.Create(ctx, onload)).To(BeNil())
+
+			By("checking for the existence of each module")
+			moduleName := types.NamespacedName{
+				Name:      onload.Name + "module",
+				Namespace: onload.Namespace,
+			}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, moduleName, &createdModule)
+				return err == nil
+			}, timeout, pollingInterval).Should(BeFalse())
 		})
 
 		It("should create a device plugin daemonset", func() {
@@ -760,7 +784,7 @@ var _ = Describe("onload controller", func() {
 				By("checking the SFC module")
 				sfcModule := kmm.Module{}
 				moduleName := types.NamespacedName{
-					Name:      onload.Name + "-sfc-module",
+					Name:      onload.Name + "-sfcmod",
 					Namespace: onload.Namespace,
 				}
 
