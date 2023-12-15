@@ -47,6 +47,10 @@ spec:
     imagePullPolicy: Always
     command:
     - /bin/sh
+    - -c
+    - --
+    args:
+    - "sleep infinity"
     resources:
       limits:
         amd.com/onload: 1
