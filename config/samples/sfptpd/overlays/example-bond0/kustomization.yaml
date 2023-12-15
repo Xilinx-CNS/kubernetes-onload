@@ -19,7 +19,7 @@ namespace: sfptpd
 images:
 - name: onload/sfptpd
   newName: docker.io/onload/sfptpd
-  newTag: 3.7.1.1000
+  newTag: 3.7.1.1002
 
 # Assign sfptpd daemon to a node with label `node-role.kubernetes.io/ptp`
 labels:

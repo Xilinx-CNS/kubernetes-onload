@@ -17,4 +17,4 @@ namespace: sfptpd
 images:
 - name: onload/sfptpd
   newName: docker.io/onload/sfptpd
-  newTag: master-dev
+  newTag: 3.7.1.1002

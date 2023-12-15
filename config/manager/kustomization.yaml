@@ -8,10 +8,10 @@ kind: Kustomization
 images:
 - name: controller
   newName: docker.io/onload/onload-operator
-  newTag: 3.0.0
+  newTag: "3.0"
 - name: deviceplugin
   newName: docker.io/onload/onload-device-plugin
-  newTag: 3.0.0
+  newTag: "3.0"
 
 configurations:
 - kustomizeconfig.yaml

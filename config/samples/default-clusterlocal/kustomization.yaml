@@ -7,7 +7,7 @@ resources:
 images:
 - name: docker.io/onload/onload-operator
   newName: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-operator
-  newTag: 3.0.0
+  newTag: "3.0"
 - name: deviceplugin
   newName: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-device-plugin
-  newTag: 3.0.0
+  newTag: "3.0"

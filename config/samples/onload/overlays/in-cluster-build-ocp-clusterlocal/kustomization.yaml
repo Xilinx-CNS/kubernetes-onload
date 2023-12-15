@@ -14,7 +14,7 @@ images:
   newTag: 8.1.2.26
 - name: onload/onload-user
   newName: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-user
-  newTag: 8.1.2.26
+  newTag: 8.1.2.26-ubi8
 - name: onload/onload-module
   newName: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-module
   newTag: 8.1.2.26-${KERNEL_FULL_VERSION}
