@@ -93,6 +93,18 @@ func (r *OnloadReconciler) Reconcile(
 		return ctrl.Result{}, nil
 	}
 
+	// From kmm docs (https://kmm.sigs.k8s.io/documentation/ordered_upgrade/):
+	// > Due to Kubernetes limitations in label names, the combined length of
+	// > Module name and namespace may not exceed 39 characters.
+	// Since we append "-module" to onload.Name this provides the upper
+	// bound on acceptable onload CRs.
+	// Check the length here because it before any other labelling / effects on
+	// the cluster.
+	if len(onload.Name)+len(onload.Namespace)+len(onloadModuleNameSuffix) > 39 {
+		return ctrl.Result{},
+			fmt.Errorf("Combined length of Onload name and namespace is too long")
+	}
+
 	res, err := r.addKmmLabelsToNodes(ctx, onload)
 	if err != nil {
 		log.Error(err, "Failed to add kmm label to Nodes")
@@ -143,8 +155,8 @@ func (r *OnloadReconciler) Reconcile(
 }
 
 const kmmModuleLabelPrefix = "kmm.node.kubernetes.io/version-module"
-const onloadModuleNameSuffix = "-onload-module"
-const sfcModuleNameSuffix = "-sfc-module"
+const onloadModuleNameSuffix = "-module"
+const sfcModuleNameSuffix = "-sfcmod"
 
 func kmmOnloadLabelName(name, namespace string) string {
 	return kmmModuleLabelPrefix + "." + namespace + "." + name + onloadModuleNameSuffix

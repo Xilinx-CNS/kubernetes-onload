@@ -163,6 +163,10 @@ this recommended overlay further, see the variant steps below.
 The above overlay configures KMM to `modprobe onload` but `modprobe sfc` is also required.
 Please see [Out-of-tree `sfc` module](#out-of-tree-sfc-kernel-module) for options.
 
+
+> [!IMPORTANT]
+> Due to Kubernetes limitations on label lengths, the combined length of the Name and Namespace of the Onload CR must be less than 32 characters.
+
 #### In-cluster builds in restricted networks
 
 In restricted networks or on other versions of Kubernetes, change the container image locations and build method(s)
