@@ -82,7 +82,7 @@ To accelerate a pod:
 
 * Configure the [Onload Operator](#onload-operator)
 * Configure an [Onload Custom Resource (CR)](#onload-custom-resource-cr)
-* Configure a pod network with AMD Solarflare interfaces, ie. Multus IPVLAN or MACVAN
+* Configure a pod network with AMD Solarflare interfaces, ie. Multus [IPVLAN or MACVAN](docs/nad.md)
 * Configure the [out-of-tree `sfc` module](#out-of-tree-sfc-kernel-module)
 * [Configure your pods](#run-onloaded-applications) to use the resource provided by
   the [Onload Device Plugin](#onload-device-plugin) and the network
@@ -242,14 +242,14 @@ An easy test to verify everything is correctly configured is the
 
 ### Run Onloaded applications
 
-To accelerate your workload, configure a pod with a AMD Solarflare network interface and
+To accelerate your workload, configure a pod with a AMD Solarflare [network interface](docs/nad.md) and
 [`amd.com/onload` resource](#resource-amdcomonload):
 
 ```yaml
 kind: Pod
 metadata:
   annotations:
-    k8s.v1.cni.cncf.io/networks: ipvlan-sf0
+    k8s.v1.cni.cncf.io/networks: ipvlan-bond0
 spec:
   ...
   containers:

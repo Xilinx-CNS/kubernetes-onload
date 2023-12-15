@@ -17,7 +17,7 @@ Obtain the SFC interface's IP address of the `onload-sfnettest-server` pod:
 ```sh
 $ kubectl describe pod onload-sfnettest-server | grep AddedInterface
   Normal  AddedInterface  24s   multus   Add eth0 [192.168.8.114/23] from openshift-sdn
-  Normal  AddedInterface  24s   multus   Add net1 [198.19.0.1/16] from default/ipvlan-sf0
+  Normal  AddedInterface  24s   multus   Add net1 [198.19.0.1/16] from default/ipvlan-bond0
 ```
 
 The server pod is already running the accelerated `sfnt-pingpong` instance.
