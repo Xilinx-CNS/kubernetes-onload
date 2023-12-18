@@ -11,6 +11,9 @@ bin
 testbin/*
 Dockerfile.cross
 
+# Moved to bundle/Dockerfile but hard-coded in Operator SDK
+bundle.Dockerfile
+
 # Machine config output
 scripts/machineconfig/mc
 
@@ -29,3 +32,6 @@ scripts/machineconfig/mc
 *.swp
 *.swo
 *~
+
+# User generated
+my-*

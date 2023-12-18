@@ -10,42 +10,50 @@ metadata:
           "apiVersion": "onload.amd.com/v1alpha1",
           "kind": "Onload",
           "metadata": {
-            "labels": {
-              "app.kubernetes.io/created-by": "onload-operator",
-              "app.kubernetes.io/instance": "onload-sample",
-              "app.kubernetes.io/managed-by": "kustomize",
-              "app.kubernetes.io/name": "onload",
-              "app.kubernetes.io/part-of": "onload-operator"
-            },
-            "name": "onload-sample"
+            "name": "onload"
           },
           "spec": {
             "devicePlugin": {
-              "devicePluginImage": "image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-device-plugin:latest",
               "imagePullPolicy": "Always"
             },
             "onload": {
               "imagePullPolicy": "Always",
               "kernelMappings": [
                 {
-                  "kernelModuleImage": "image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-module:v8.1.0-${KERNEL_FULL_VERSION}",
+                  "build": {
+                    "buildArgs": [
+                      {
+                        "name": "ONLOAD_BUILD_PARAMS",
+                        "value": ""
+                      },
+                      {
+                        "name": "ONLOAD_SOURCE",
+                        "value": "docker.io/onload/onload-source:8.1.2.26"
+                      }
+                    ],
+                    "dockerfileConfigMap": {
+                      "name": "onload-module-dockerfile-ch29bghg54"
+                    }
+                  },
+                  "kernelModuleImage": "image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-module:8.1.2.26-${KERNEL_FULL_VERSION}",
                   "regexp": "^.*\\.x86_64$"
                 }
               ],
-              "userImage": "image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-user:v8.1.0",
-              "version": "8.1.0"
+              "userImage": "docker.io/onload/onload-user:8.1.2.26-ubi8",
+              "version": "8.1.2.26"
             },
             "selector": {
               "node-role.kubernetes.io/worker": ""
-            }
+            },
+            "serviceAccountName": "onload-operator-sa"
           }
         }
       ]
     capabilities: Basic Install
-    createdAt: "2023-08-15T09:06:14Z"
+    createdAt: "2023-12-19T12:05:14Z"
     operators.operatorframework.io/builder: operator-sdk-v1.31.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: onload-operator.v0.0.1
+  name: onload-operator.v3.0.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -69,6 +77,43 @@ spec:
     spec:
       clusterPermissions:
       - rules:
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - nodes
+          verbs:
+          - get
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - delete
+          - get
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - pods/eviction
+          verbs:
+          - create
         - apiGroups:
           - kmm.sigs.x-k8s.io
           resources:
@@ -107,18 +152,6 @@ spec:
           - get
           - patch
           - update
-        - apiGroups:
-          - authentication.k8s.io
-          resources:
-          - tokenreviews
-          verbs:
-          - create
-        - apiGroups:
-          - authorization.k8s.io
-          resources:
-          - subjectaccessreviews
-          verbs:
-          - create
         serviceAccountName: onload-operator-controller-manager
       deployments:
       - label:
@@ -143,53 +176,15 @@ spec:
               labels:
                 control-plane: controller-manager
             spec:
-              affinity:
-                nodeAffinity:
-                  requiredDuringSchedulingIgnoredDuringExecution:
-                    nodeSelectorTerms:
-                    - matchExpressions:
-                      - key: kubernetes.io/arch
-                        operator: In
-                        values:
-                        - amd64
-                        - arm64
-                        - ppc64le
-                        - s390x
-                      - key: kubernetes.io/os
-                        operator: In
-                        values:
-                        - linux
               containers:
               - args:
-                - --secure-listen-address=0.0.0.0:8443
-                - --upstream=http://127.0.0.1:8080/
-                - --logtostderr=true
-                - --v=0
-                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
-                name: kube-rbac-proxy
-                ports:
-                - containerPort: 8443
-                  name: https
-                  protocol: TCP
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 128Mi
-                  requests:
-                    cpu: 5m
-                    memory: 64Mi
-                securityContext:
-                  allowPrivilegeEscalation: false
-                  capabilities:
-                    drop:
-                    - ALL
-              - args:
-                - --health-probe-bind-address=:8081
-                - --metrics-bind-address=127.0.0.1:8080
                 - --leader-elect
                 command:
                 - /manager
-                image: kitchen-sink.kube.test:5000/controller:latest
+                env:
+                - name: DEVICE_PLUGIN_IMG
+                  value: docker.io/onload/onload-device-plugin:3.0.0
+                image: docker.io/onload/onload-operator:3.0.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -267,9 +262,9 @@ spec:
   - onload
   links:
   - name: Onload Operator
-    url: https://onload-operator.domain
+    url: https://github.com/Xilinx-CNS/kubernetes-onload
   maturity: alpha
   provider:
     name: AMD
-    url: github.com/Xilinx-CNS/kubernetes-onload
-  version: 0.0.1
+    url: https://www.xilinx.com/support/download/nic-software-and-drivers.html#kubernete
+  version: 3.0.0

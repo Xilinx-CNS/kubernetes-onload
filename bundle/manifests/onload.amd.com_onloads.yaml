@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
+    controller-gen.kubebuilder.io/version: v0.12.1
   creationTimestamp: null
   name: onloads.onload.amd.com
 spec:
@@ -41,30 +41,58 @@ spec:
                 description: DevicePlugin is the specification of the device plugin
                   that will add a new onload resource into the cluster.
                 properties:
-                  devicePluginBuild:
-                    description: Specific instructions for building the device plugin
-                      image.
-                    type: object
-                  devicePluginImage:
-                    description: DevicePluginImage
+                  baseMountPath:
+                    default: /opt/onload
+                    description: BaseMountPath is a prefix to be applied to all onload
+                      file mounts in the container's filesystem.
+                    type: string
+                  binMountPath:
+                    default: /usr/bin
+                    description: BinMountPath is the location to mount onload binaries
+                      in the container's filesystem.
+                    type: string
+                  hostOnloadPath:
+                    default: /opt/onload/
+                    description: HostOnloadPath is the base location of onload files
+                      on the host filesystem.
                     type: string
                   imagePullPolicy:
                     description: 'ImagePullPolicy is the policy used when pulling
                       images. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images'
                     type: string
-                required:
-                - devicePluginImage
+                  libMounthPath:
+                    default: /usr/lib64
+                    description: LibMountPath is the location to mount onload libraries
+                      in the container's filesystem.
+                    type: string
+                  maxPodsPerNode:
+                    default: 100
+                    description: MaxPodsPerNode is the number of Kubernetes devices
+                      that the Onload Device Plugin should register with the kubelet.
+                      Notionally this is equivalent to the number of pods that can
+                      request an onload resource on each node.
+                    type: integer
+                  mountOnload:
+                    default: false
+                    description: MountOnload is used by the Onload Device Plugin to
+                      decide whether to mount the `onload` script as a file in the
+                      container's filesystem. `onload` is mounted at `<baseMountPath>/<binMountpath>`
+                      Mutually exclusive with Preload
+                    type: boolean
+                  setPreload:
+                    default: true
+                    description: Preload determines whether the Onload Device Plugin
+                      will set LD_PRELOAD for pods using Onload. Mutually exclusive
+                      with MountOnload
+                    type: boolean
                 type: object
+                x-kubernetes-validations:
+                - message: SetPreload and MountOnload mutually exclusive
+                  rule: '!(self.setPreload && self.mountOnload)'
               onload:
                 description: Onload is the specification of the version of onload
                   to be used by this CR
                 properties:
-                  build:
-                    description: Build contains build options for building user level
-                      components. If non-nil the operator will attempt to build the
-                      required images using what is defined in the build section,
-                      and push the images to the specified locations.
-                    type: object
                   imagePullPolicy:
                     description: 'ImagePullPolicy is the policy used when pulling
                       images. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images'
@@ -76,22 +104,55 @@ spec:
                     items:
                       properties:
                         build:
-                          description: Build contains build options for building kernel
-                            level components. If non-nil the operator will attempt
-                            to build the required images using what is defined in
-                            the build section, and push the images to the specified
-                            locations.
+                          description: Build specifies the parameters that are to
+                            be passed to the Kernel Module Management operator when
+                            building the images that contain the module. The build
+                            process creates a new image which will be written to the
+                            location specified by the `KernelModuleImage` parameter.
+                            If empty no builds will take place.
+                          properties:
+                            buildArgs:
+                              description: BuildArgs is an array of build variables
+                                that are provided to the image building backend.
+                              items:
+                                description: BuildArg represents a build argument
+                                  used when building a container image.
+                                properties:
+                                  name:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - name
+                                - value
+                                type: object
+                              type: array
+                            dockerfileConfigMap:
+                              description: ConfigMap that holds Dockerfile contents
+                              properties:
+                                name:
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind,
+                                    uid?'
+                                  type: string
+                              type: object
+                              x-kubernetes-map-type: atomic
+                          required:
+                          - dockerfileConfigMap
                           type: object
                         kernelModuleImage:
-                          description: KernelImage is the image that contains the
-                            out-of-tree kernel modules used by onload, including the
-                            sfc driver.
+                          description: KernelModuleImage is the image that contains
+                            the out-of-tree kernel modules used by Onload.
                           type: string
                         regexp:
                           description: Regexp is a regular expression that is used
                             to match against the kernel versions of the nodes in the
                             cluster
                           type: string
+                        sfc:
+                          description: SFC optionally specifies that the controller
+                            will manage the SFC kernel module.
+                          type: object
                       required:
                       - kernelModuleImage
                       - regexp
@@ -115,10 +176,15 @@ spec:
                 description: Selector defines the set of nodes that this onload CR
                   will run on.
                 type: object
+              serviceAccountName:
+                description: ServiceAccountName is the name of the service account
+                  that the objects created by the onload operator will use.
+                type: string
             required:
             - devicePlugin
             - onload
             - selector
+            - serviceAccountName
             type: object
           status:
             description: Status contains the statuses for onload and related products
