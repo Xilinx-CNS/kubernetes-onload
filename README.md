@@ -9,7 +9,7 @@ Use OpenOnload® or EnterpriseOnload® to accelerate your workloads in Kubernete
 * [OpenOnload](https://github.com/Xilinx-CNS/onload) (including EnterpriseOnload) 8.1+
 * [AMD Solarflare](https://www.solarflare.com) hardware (`sfc`)
 * OpenShift Container Platform (OCP) 4.10+ with
-  * [Kernel Module Management (KMM) Operator](https://kmm.sigs.k8s.io/) 1.1 ([OpenShift documentation](https://docs.openshift.com/container-platform/4.14/hardware_enablement/kmm-kernel-module-management.html)
+  * [Kernel Module Management (KMM) Operator](https://kmm.sigs.k8s.io/) 1.1 ([OpenShift documentation](https://docs.openshift.com/container-platform/4.14/hardware_enablement/kmm-kernel-module-management.html))
 * Both restricted network or internet-connected clusters
 
 Deployment can also be performed on Kubernetes 1.23+ but full implementation details are not currently provided.
@@ -121,9 +121,9 @@ an `Onload` *kind* of Custom Resource (CR).
 
 #### Local Onload Operator images in restricted networks
 
-For restricted networks, the `onload-operator` image location will require changing from its DockerHub default.
-To run the above command using locally hosted container images, open this repository locally and use the
-[following overlay](config/samples/default-clusterlocal/kustomization.yaml):
+For restricted networks, the `onload-operator` and `onload-device-plugin` image locations will require changing from
+their DockerHub defaults. To run the above command using locally hosted container images, open this repository
+locally and use the [following overlay](config/samples/default-clusterlocal/kustomization.yaml):
 
 ```sh
 git clone -b v3.0 https://github.com/Xilinx-CNS/kubernetes-onload && cd kubernetes-onload
@@ -140,8 +140,9 @@ to expose a [Kubernetes Resource](https://kubernetes.io/docs/concepts/configurat
 named `amd.com/onload`.
 
 It is distributed as the container image `onload-device-plugin` and is deployed and configured entirely by
-the Onload Operator. You can configure the image location and its settings via the Onload Operator within
-a [Onload Custom Resource (CR)](#onload-custom-resource-cr).
+the Onload Operator. Its image location is configured as an environment variable within the Onload Operator deployment
+([see above](#local-onload-operator-images-in-restricted-networks)) and its ImagePullPolicy as part of
+[Onload Custom Resource (CR)](#onload-custom-resource-cr) along with its other customisation properties.
 
 ### Onload Custom Resource (CR)
 
@@ -162,7 +163,6 @@ this recommended overlay further, see the variant steps below.
 
 The above overlay configures KMM to `modprobe onload` but `modprobe sfc` is also required.
 Please see [Out-of-tree `sfc` module](#out-of-tree-sfc-kernel-module) for options.
-
 
 > [!IMPORTANT]
 > Due to Kubernetes limitations on label lengths, the combined length of the Name and Namespace of the Onload CR must be less than 32 characters.

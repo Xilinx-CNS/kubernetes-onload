@@ -6,7 +6,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 0.0.1
+VERSION ?= 3.0.0
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -53,10 +53,11 @@ endif
 # This is useful for CI or a project to utilize a specific version of the operator-sdk toolkit.
 OPERATOR_SDK_VERSION ?= v1.31.0
 
+IMG_BASE ?= docker.io/onload
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= $(IMG_BASE)/onload-operator:$(VERSION)
 # Image URL to use for building/pushing device plugin
-DEVICE_IMG ?= deviceplugin:latest
+DEVICE_IMG ?= $(IMG_BASE)/onload-device-plugin:$(VERSION)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.26.0
 
@@ -268,8 +269,11 @@ endif
 .PHONY: bundle
 bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
 	$(OPERATOR_SDK) generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG) deviceplugin=${DEVICE_IMG}
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
+	for generated in `grep -rL --include '*.yaml' '^# SPDX-License-Identifier' bundle/`; do \
+		cat hack/boilerplate.yaml.txt $$generated > $$generated.out && mv $$generated.out $$generated; \
+	done
 	$(OPERATOR_SDK) bundle validate ./bundle
 
 .PHONY: bundle-build

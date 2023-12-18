@@ -5,7 +5,7 @@
 resources:
 - bases/onload-operator.clusterserviceversion.yaml
 - ../default
-- ../samples
+- ../samples/onload/overlays/in-cluster-build-ocp
 - ../scorecard
 
 # [WEBHOOK] To enable webhooks, uncomment all the sections with [WEBHOOK] prefix.

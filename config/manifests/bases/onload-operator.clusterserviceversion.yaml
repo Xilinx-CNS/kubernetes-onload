@@ -47,5 +47,5 @@ spec:
   maturity: alpha
   provider:
     name: AMD
-    url: https://github.com/Xilinx-CNS/kubernetes-onload
+    url: https://www.xilinx.com/support/download/nic-software-and-drivers.html#kubernete
   version: 0.0.0
