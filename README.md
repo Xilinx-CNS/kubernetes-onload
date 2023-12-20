@@ -10,6 +10,7 @@ Use OpenOnload® or EnterpriseOnload® to accelerate your workloads in Kubernete
 * [AMD Solarflare](https://www.solarflare.com) hardware (`sfc`)
 * OpenShift Container Platform (OCP) 4.10+ with
   * [Kernel Module Management (KMM) Operator](https://kmm.sigs.k8s.io/) 1.1 ([OpenShift documentation](https://docs.openshift.com/container-platform/4.14/hardware_enablement/kmm-kernel-module-management.html))
+  * [Node Feature Discovery (NFD)](docs/nfd.md) Operator (optional)
 * Both restricted network or internet-connected clusters
 
 Deployment can also be performed on Kubernetes 1.23+ but full implementation details are not currently provided.
@@ -163,6 +164,9 @@ this recommended overlay further, see the variant steps below.
 
 The above overlay configures KMM to `modprobe onload` but `modprobe sfc` is also required.
 Please see [Out-of-tree `sfc` module](#out-of-tree-sfc-kernel-module) for options.
+
+The above overlay selects **all `worker` role nodes** in the cluster. To filter based on node hardware, you may wish
+to use the [recommended Node Feature Discovery configuration](docs/nfd.md).
 
 > [!IMPORTANT]
 > Due to Kubernetes limitations on label lengths, the combined length of the Name and Namespace of the Onload CR must be less than 32 characters.
