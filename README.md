@@ -325,7 +325,7 @@ spec:
 #### Converting an existing profile
 
 If you have an existing profile defined as a `.opf` file you can generate a new
-ConfigMap definition from this using the [`scripts/profile_to_configmap.sh`](scripts/profile_to_configmap.sh)
+ConfigMap definition from this using the [`scripts/profiles/profile_to_configmap.sh`](scripts/profiles/profile_to_configmap.sh)
 script.
 
 `profile_to_configmap.sh` takes in a comma separated list of profiles and will
@@ -334,7 +334,7 @@ sent straight to the cluster. To apply the generated ConfigMap straight away
 run:
 
 ```sh
-./scripts/profile_to_configmap.sh -p /path/to/profile.opf | kubectl apply -f -
+./scripts/profiles/profile_to_configmap.sh -p /path/to/profile.opf | kubectl apply -f -
 ```
 
 Currently the script produces ConfigMaps with a fixed naming structure,
