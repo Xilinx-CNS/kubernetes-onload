@@ -146,8 +146,8 @@ the Onload Operator. Its image location is configured as an environment variable
 
 ### Onload Custom Resource (CR)
 
-Instruct the Onload Operator to deploy the components necessary for accelerating workload pods by deploying
-a `Onload` *kind* of Custom Resource (CR).
+Instruct the Onload Operator to deploy the components necessary for accelerating workload pods by deploying an `Onload`
+*kind* of [Custom Resource (CR)](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
 If your cluster is internet-connected OpenShift and you want to use in-cluster builds with the current version
 of OpenOnload, run:
@@ -159,10 +159,17 @@ kubectl apply -k https://github.com/Xilinx-CNS/kubernetes-onload/config/samples/
 This takes a [base `Onload` CR template](config/samples/onload/base/onload_v1alpha1_onload.yaml) and adds the
 appropriate [image versions](config/samples/onload/overlays/in-cluster-build-ocp/kustomization.yaml) and
 [in-cluster build configuration](config/samples/onload/overlays/in-cluster-build-ocp/patch-onload.yaml). To customise
-this recommended overlay further, see the variant steps below.
+this recommended overlay further, see comments in these files and the variant steps below.
 
-The above overlay configures KMM to `modprobe onload` but `modprobe sfc` is also required.
-Please see [Out-of-tree `sfc` module](#out-of-tree-sfc-kernel-module) for options.
+The above overlay configures KMM to `modprobe onload` and `modprobe sfc`. Both are required, but the latter may occur
+outside the Onload Operator. Please see [Out-of-tree `sfc` module](#out-of-tree-sfc-kernel-module) for options.
+
+For further explanation of `Onload` CR's available properties, refer to either inline comments in these templates or
+the built-in explain command, eg. `kubectl explain onload.spec`.
+
+The schema for the above templates is defined by an `Onload` [Custom Resource Definition (CRD)](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/)
+in [onload_types.go](api/v1alpha1/onload_types.go) which is distributed as part of Onload Operator's
+[generated YAML bundle](config/crd/bases/onload.amd.com_onloads.yaml).
 
 > [!IMPORTANT]
 > Due to Kubernetes limitations on label lengths, the combined length of the Name and Namespace of the Onload CR must be less than 32 characters.
@@ -215,7 +222,7 @@ with a Solarflare card.
 
 The following methods may be used:
 
-* Configure the Onload Operator to deploy a KMM Module for `sfc`. Please see the example comment in
+* Configure the Onload Operator to deploy a KMM Module for `sfc`. Please see the example in
   [in-cluster build configuration](config/samples/onload/overlays/in-cluster-build-ocp/patch-onload.yaml).
 
 * [OpenShift MachineConfig for Day 0/1 sfc](#openshift-machineconfig-for-sfc). This is for when newer driver features

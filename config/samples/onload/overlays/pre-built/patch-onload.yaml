@@ -7,6 +7,8 @@ metadata:
 spec:
   onload:
     kernelMappings:
+      # Literal strings example provided here as a method of self-documenting which images have been pre-built.
+      # The regular expression & `${KERNEL_FULL_VERSION}` variable method is also supported with pre-built images.
       - regexp: 4.18.0-372.49.1.el8_6.x86_64
         kernelModuleImage: image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/onload-module:8.1.2.26-4.18.0-372.49.1.el8_6.x86_64
 
