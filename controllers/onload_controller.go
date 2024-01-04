@@ -52,10 +52,6 @@ type OnloadReconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Onload object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
@@ -1180,7 +1176,7 @@ func (r *OnloadReconciler) nodeLabelWatchFunc(ctx context.Context, obj client.Ob
 		return requests
 	}
 
-	// TODO: Check labels here to only requeue relevant onloads.
+	// TODO(ON-15506): Check labels here to only requeue relevant onloads.
 
 	for _, onload := range onloadList.Items {
 		request := reconcile.Request{NamespacedName: types.NamespacedName{Name: onload.Name, Namespace: onload.Namespace}}
