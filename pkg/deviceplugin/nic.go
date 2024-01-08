@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/golang/glog"
@@ -43,27 +44,56 @@ func isSFCNic(devicePath string) bool {
 	return vendor == solarflareVendor
 }
 
-func readSysFiles() ([]string, error) {
+// Get numa node from sysfs files.
+// -1 means no specific numa node / unknown
+func getNumaNode(devicePath string) int64 {
+	data, err := os.ReadFile(path.Join(devicePath, "device", "numa_node"))
+	if errors.Is(err, os.ErrNotExist) {
+		// File doesn't exist but that is fine, return -1
+		return -1
+	} else if err != nil {
+		glog.Errorf("Error reading %s (%v)",
+			path.Join(devicePath, "device", "vendor"), err)
+		return -1
+	}
+	numaString := strings.TrimSuffix(string(data), "\n")
+	node, err := strconv.ParseInt(numaString, 10, 64)
+	if err != nil {
+		glog.Errorf("Error parse int from string %s (%v)",
+			numaString, err)
+		return -1
+	}
+	return node
+}
+
+func readSysFiles() ([]nic, error) {
 	infos, err := os.ReadDir(sysClassNetPath)
 	if err != nil {
 		glog.Errorf("Error reading %s (%v)", sysClassNetPath, err)
-		return []string{}, err
+		return []nic{}, err
 	}
-	interfaces := []string{}
+
+	interfaces := []nic{}
 	for _, info := range infos {
-		if isSFCNic(path.Join(sysClassNetPath, info.Name())) {
-			interfaces = append(interfaces, info.Name())
+		devicePath := path.Join(sysClassNetPath, info.Name())
+		if !isSFCNic(devicePath) {
+			continue
 		}
+		nic := nic{
+			name: info.Name(),
+			numa: getNumaNode(devicePath),
+		}
+		interfaces = append(interfaces, nic)
 	}
 	return interfaces, nil
 }
 
 // Returns a list of the Solarflare interfaces present on the node
-func queryNics() ([]string, error) {
+func queryNics() ([]nic, error) {
 	interfaces, err := readSysFiles()
 	if err != nil {
 		glog.Errorf("Failed to list interfaces (%v)", err)
-		return []string{}, err
+		return []nic{}, err
 	}
 	return interfaces, nil
 }
