@@ -93,7 +93,6 @@ func NewNicManager(
 // Initialises the set of devices to advertise to kubernetes
 func (manager *NicManager) initDevices() {
 	manager.devices = []*pluginapi.Device{}
-	fmt.Println(manager.interfaces)
 	for i := 0; i < manager.config.MaxPodsPerNode; i++ {
 		name := fmt.Sprintf("sfc-%v", i)
 		device := &pluginapi.Device{
