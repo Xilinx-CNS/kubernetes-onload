@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -991,6 +992,11 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 
 	workerContainerName := "onload-worker"
 
+	cplaneParams := "-K" // log-to-kmsg
+	if onload.Spec.Onload.ControlPlane != nil && onload.Spec.Onload.ControlPlane.Parameters != nil {
+		cplaneParams = strings.Join(onload.Spec.Onload.ControlPlane.Parameters, " ")
+	}
+
 	workerContainerEnv := []corev1.EnvVar{
 		{
 			Name: "POD_NAME",
@@ -1015,6 +1021,10 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		{
 			Name:  "ONLOAD_CP_SERVER_PATH",
 			Value: "/mnt/onload/sbin/onload_cp_server",
+		},
+		{
+			Name:  "ONLOAD_CP_SERVER_PARAMS",
+			Value: cplaneParams,
 		},
 	}
 
