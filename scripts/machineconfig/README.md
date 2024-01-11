@@ -23,7 +23,7 @@ Configure a development registry and configure cluster for [insecure registries]
 if required. Specify the base of the following images:
 
 ```sh
-export REGISTRY_BASE=image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/
+export REGISTRY_BASE=image-registry.openshift-image-registry.svc:5000/onload-clusterlocal
 ```
 
 ### Script method
@@ -61,6 +61,10 @@ To run `kubectl apply`:
 make sfc-mc-deploy
 ```
 
+### Troubleshooting
+
+Please see [section in troubleshooting guide](../../docs/troubleshooting.md#day-01-machineconfig).
+
 ## Footnotes
 
-Copyright (c) 2023 Advanced Micro Devices, Inc.
+Copyright (c) 2023-2024 Advanced Micro Devices, Inc.

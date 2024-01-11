@@ -1,10 +1,13 @@
 # SPDX-License-Identifier: MIT
-# SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
+# SPDX-FileCopyrightText: (c) Copyright 2023-2024 Advanced Micro Devices, Inc.
 apiVersion: v1
 kind: Pod
 metadata:
   name: onload-sfnettest-server
   namespace: default
+  labels:
+    app.kubernetes.io/part-of: sfnettest
+    app.kubernetes.io/component: server
   annotations:
     k8s.v1.cni.cncf.io/networks: ipvlan-bond0
 spec:
@@ -21,6 +24,9 @@ spec:
     resources:
       limits:
         amd.com/onload: 1
+    envFrom:
+      - configMapRef:
+          name: onload-latency-profile
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -33,6 +39,9 @@ kind: Pod
 metadata:
   name: onload-sfnettest-client
   namespace: default
+  labels:
+    app.kubernetes.io/part-of: sfnettest
+    app.kubernetes.io/component: client
   annotations:
     k8s.v1.cni.cncf.io/networks: ipvlan-bond0
 spec:
@@ -54,6 +63,9 @@ spec:
     resources:
       limits:
         amd.com/onload: 1
+    envFrom:
+      - configMapRef:
+          name: onload-latency-profile
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:

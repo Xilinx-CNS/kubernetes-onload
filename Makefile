@@ -165,7 +165,7 @@ sfc-mc-build: ## Build sfc mc yaml
 
 .PHONY: sfc-mc-deploy
 sfc-mc-deploy: ## Deploy sfc mc yaml
-	oc apply -f ./scripts/machineconfig/output/99-sfc-machineconfig.yaml
+	oc apply --validate=true -f ./scripts/machineconfig/output/99-sfc-machineconfig.yaml
 
 .PHONY: sfc-mc-undeploy
 sfc-mc-undeploy:

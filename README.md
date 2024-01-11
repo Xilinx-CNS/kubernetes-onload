@@ -63,6 +63,8 @@ When using [in-cluster builds](#onload-module-in-cluster-builds), other dependen
 the method selected. These may include `ubi-minimal` container image and
 [UBI RPM repositories](https://access.redhat.com/articles/4238681).
 
+Nodes require 60MB of root-writable local storage, by default in `/opt`.
+
 ### Provided Images
 
 This repository's YAML configuration uses the following images by default:
@@ -130,8 +132,12 @@ git clone -b v3.0 https://github.com/Xilinx-CNS/kubernetes-onload && cd kubernet
 
 cp -r config/samples/default-clusterlocal config/samples/my-operator
 $EDITOR config/samples/my-operator/kustomization.yaml
-kubectl apply -k config/samples/my-operator
+kubectl apply --validate=true -k config/samples/my-operator
 ```
+
+> [!TIP]
+> Replacing `kubectl apply` with `kubectl kustomize` will output a complete YAML manifest file which can be copied to a
+> network that does not have access to this repository.
 
 ### Onload Device Plugin
 
@@ -139,10 +145,20 @@ The Onload Device Plugin implements the [Kubernetes Device Plugin API](https://k
 to expose a [Kubernetes Resource](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
 named `amd.com/onload`.
 
-It is distributed as the container image `onload-device-plugin` and is deployed and configured entirely by
-the Onload Operator. Its image location is configured as an environment variable within the Onload Operator deployment
-([see above](#local-onload-operator-images-in-restricted-networks)) and its ImagePullPolicy as part of
-[Onload Custom Resource (CR)](#onload-custom-resource-cr) along with its other customisation properties.
+It is distributed as the container image `onload-device-plugin`. The image location is configured as an environment
+variable within the Onload Operator deployment ([see above](#local-onload-operator-images-in-restricted-networks)) and
+its ImagePullPolicy as part of [Onload Custom Resource (CR)](#onload-custom-resource-cr), along with its other
+customisation properties.
+
+The Onload Operator manages an Onload Device Plugin DaemonSet which deploys, to each node selected for acceleration,
+a pod consisting of 3 containers:
+
+* Init (`init` container, `onload-user` image)
+  -- for copying Onload files to host filesystem and Onload Worker volume.
+* Onload Worker (`onload-worker` container, `onload-device-plugin` image)
+  -- provides Onload Control Plane environment; privileged access to network namespaces.
+* Onload Device Plugin (`device-plugin` container, `onload-device-plugin` image)
+  -- for Kubernetes Device Plugin API; privileged access to Kubernetes API.
 
 ### Onload Custom Resource (CR)
 
@@ -263,7 +279,8 @@ spec:
         amd.com/onload: 1
 ```
 
-All applications started within the pod environment will be accelerated due to the `LD_PRELOAD` environment variable.
+All applications started within the pod environment will be accelerated due to the `LD_PRELOAD` environment variable
+unless `setPreload: false` is configured in Onload CR.
 
 ### Resource `amd.com/onload`
 
@@ -290,6 +307,17 @@ Binary mounts (if `mountOnload` is true, by default in `/opt/onload/usr/bin/`)
 
 If you wish to customise where files are mounted in the container's filesystem this can be configured with the fields
 of `spec.devicePlugin` in an Onload CR.
+
+> [!IMPORTANT]
+> Kubernetes Device Plugin only affects initial pod scheduling
+>
+> Kubernetes Device Plugin is designed to configure pods once only, at creation time. If the Onload CR is re-applied to
+> the cluster with settings that would change pod environment -- for example, changing the value of `setPreload` --
+> then running pods must be recreated before using these changes.
+>
+> Additionally, Kubernetes does not evict pods when node resources are removed; pods do not automatically have a formal
+> dependency on Onload Device Plugin or Onload Module. This has the advantage that minor Onload Operator behaviour
+> does not affect the workloads its components pre-configured.
 
 ### Example client-server with sfnettest
 
@@ -341,6 +369,10 @@ Currently the script produces ConfigMaps with a fixed naming structure,
 for example if you want to create a ConfigMap from a profile called
 `name.opf` the generated name will be `onload-name-profile`.
 
+## Troubleshooting
+
+Please see dedicated [troubleshooting guide](docs/troubleshooting.md).
+
 ## Build
 
 ### Onload Module pre-built images
@@ -366,6 +398,9 @@ Please see [DEVELOPING](DEVELOPING.md) documentation.
 Developing Onload Operator does not require building these images as official images are available.
 
 If you wish to build these images, please follow ['Distributing as container image' in Onload repository's DEVELOPING](https://github.com/Xilinx-CNS/onload/blob/master/DEVELOPING.md#distributing-as-container-image).
+This includes building debug versions. All Onload images in use must be consistent, in exact commit and build
+parameters. For example, a debug build of `onload-user` must be used with a debug build of `onload-module`. Build
+parameter specification is provided in the sample Onload CRs for the in-cluster build method.
 
 ### Insecure registries
 

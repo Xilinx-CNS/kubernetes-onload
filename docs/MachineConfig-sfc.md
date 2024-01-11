@@ -1,1 +1,1 @@
-scripts/machineconfig/README.md
+../scripts/machineconfig/README.md
