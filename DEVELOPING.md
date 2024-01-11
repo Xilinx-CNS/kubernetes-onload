@@ -13,37 +13,38 @@ and [Kubebuilder](https://kubebuilder.io/).
 
 The Onload Operator and Onload Device Plugin consume Onload container images (`onload-user` and either `onload-source` or `onload-module`). You may wish to pre-populate your cluster's container image registry, either with the [official images provided](README.md#provided-images) or [your own builds](README.md#build).
 
-## Build and deploy Onload Operator from source
+## Build and deploy from source
 
 Configure a development registry and configure cluster for [insecure registries](README.md#insecure-registries)
-if required. Specify the base of the following images:
+if required. Specify the following image locations:
 
 ```sh
-export REGISTRY_BASE=image-registry.openshift-image-registry.svc:5000/onload-clusterlocal/
+export REGISTRY_BASE=image-registry.openshift-image-registry.svc:5000/onload-clusterlocal
+export IMG=$REGISTRY_BASE/onload-operator:latest
+export DEVICE_IMG=$REGISTRY_BASE/onload-device-plugin:latest
 ```
 
 Create and push the Onload Operator controller image:
 
 ```sh
-make docker-build docker-push IMG=$REGISTRY_BASE/onload-operator:latest
+make docker-build docker-push
 ```
 
 Create and push the Onload Device Plugin image:
 
 ```sh
-export DEVICE_IMG=$REGISTRY_BASE/onload-device-plugin:latest
 make device-plugin-docker-build device-plugin-docker-push
 ```
 
 Deploy the Onload Operator:
 
 ```sh
-make deploy IMG=$REGISTRY_BASE/operator:latest
+make deploy
 ```
+
 Ensure that `$DEVICE_IMG` is exported when deploying the operator, or append `DEVICE_IMG=...` to the make invocation.
 
 Continue with [deploying the Onload CR](README.md#onload-custom-resource-cr).
-
 
 ## Footnotes
 
