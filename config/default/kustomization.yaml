@@ -11,8 +11,8 @@ namespace: onload-operator-system
 namePrefix: onload-operator-
 
 # Labels to add to all resources and selectors.
-#commonLabels:
-#  someName: someValue
+commonLabels:
+  app.kubernetes.io/part-of: onload
 
 resources:
 - ../crd

@@ -156,6 +156,15 @@ const kmmModuleLabelPrefix = "kmm.node.kubernetes.io/version-module"
 const onloadModuleNameSuffix = "-module"
 const sfcModuleNameSuffix = "-sfcmod"
 
+func baseLabels(name, namespace string, component string) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/managed-by": "onload-operator",
+		"app.kubernetes.io/part-of":    "onload",
+		"app.kubernetes.io/instance":   "onload-" + namespace + "-" + name,
+		"app.kubernetes.io/component":  component,
+	}
+}
+
 func kmmOnloadLabelName(name, namespace string) string {
 	return kmmModuleLabelPrefix + "." + namespace + "." + name + onloadModuleNameSuffix
 }
@@ -553,7 +562,7 @@ func (r *OnloadReconciler) handleNodeUpdate(ctx context.Context, onload *onloadv
 
 	// Check that the Device Plugin pod has terminated before continuing
 	labelSet := labels.Set{
-		"onload.amd.com/name": onload.Name + devicePluginNameSuffix,
+		onloadLabelPrefix + "name": onload.Name + devicePluginNameSuffix,
 	}
 	pods, err := r.getPodsOnNode(ctx, labelSet, node.Name)
 	if err != nil {
@@ -843,6 +852,7 @@ func createModule(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      moduleName,
 			Namespace: onload.Namespace,
+			Labels:    baseLabels(onload.Name, onload.Namespace, "module"),
 		},
 		Spec: kmm.ModuleSpec{
 			ModuleLoader: kmm.ModuleLoaderSpec{
@@ -867,7 +877,7 @@ func createModule(
 }
 
 const devicePluginNameSuffix = "-onload-device-plugin-ds"
-const onloadVersionLabel = "onload-version"
+const onloadVersionLabel = onloadLabelPrefix + "version"
 
 func (r *OnloadReconciler) createDevicePluginDaemonSet(
 	ctx context.Context, onload *onloadv1alpha1.Onload,
@@ -1045,7 +1055,7 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 	}
 
 	initContainer := corev1.Container{
-		Name:            onload.Name + "-onload-device-plugin" + "-init",
+		Name:            "init",
 		Image:           onload.Spec.Onload.UserImage,
 		ImagePullPolicy: onload.Spec.Onload.ImagePullPolicy,
 		Command: []string{
@@ -1080,7 +1090,11 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		},
 	}
 
-	dsLabels := map[string]string{"onload.amd.com/name": devicePluginName}
+	dsLabels := baseLabels(onload.Name, onload.Namespace, "device-plugin")
+	dsLabels[onloadVersionLabel] = onload.Spec.Onload.Version
+
+	dsPodLabels := baseLabels(onload.Name, onload.Namespace, "device-plugin")
+	dsPodLabels[onloadLabelPrefix+"name"] = devicePluginName
 
 	kubeletSocketVolume := corev1.Volume{
 		Name: "kubelet-socket",
@@ -1115,14 +1129,14 @@ func (r *OnloadReconciler) createDevicePluginDaemonSet(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      devicePluginName,
 			Namespace: onload.Namespace,
-			Labels:    map[string]string{onloadVersionLabel: onload.Spec.Onload.Version},
+			Labels:    dsLabels,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{Type: appsv1.OnDeleteDaemonSetStrategyType},
-			Selector:       &metav1.LabelSelector{MatchLabels: dsLabels},
+			Selector:       &metav1.LabelSelector{MatchLabels: dsPodLabels},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: dsLabels,
+					Labels: dsPodLabels,
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: onload.Spec.ServiceAccountName,

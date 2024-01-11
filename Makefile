@@ -152,7 +152,7 @@ device-plugin-docker-build: test ## Build docker image with the manager.
 	docker build -t ${DEVICE_IMG} -f deviceplugin.Dockerfile --network="host" .
 
 .PHONY: device-plugin-docker-push
-device-plugin-docker-push: test ## Push docker image to the registry.
+device-plugin-docker-push: ## Push docker image to the registry.
 	docker push ${DEVICE_IMG}
 
 .PHONY: sfc-mc-docker-build
