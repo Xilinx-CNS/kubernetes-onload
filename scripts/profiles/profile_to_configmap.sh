@@ -123,6 +123,8 @@ for profile in $profiles; do
   echo "kind: ConfigMap"
   echo "metadata:"
   echo "  name: onload-$(basename "$profile" .opf)-profile"
+  echo "  labels:"
+  echo "    app.kubernetes.io/part-of: onload"
   echo "data:"
   onload_import "$profile" "$@"
   echo "---"
