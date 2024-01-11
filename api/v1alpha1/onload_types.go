@@ -76,6 +76,18 @@ type OnloadSpec struct {
 	// ImagePullPolicy is the policy used when pulling images.
 	// More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
+
+	// +optional
+	// ControlPlane allows fine-tuning of the Onload control plane server.
+	ControlPlane *ControlPlaneSpec `json:"controlPlane,omitempty"`
+}
+
+type ControlPlaneSpec struct {
+	// +optional
+	// Parameters is an optional list of parameters passed to the Onload
+	// control plane server when launched by the Onload kernel module.
+	// +kubebuilder:default:={"-K"}
+	Parameters []string `json:"parameters"`
 }
 
 // Currently unimplemented

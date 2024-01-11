@@ -4,6 +4,7 @@ package controllers
 
 import (
 	"errors"
+	"slices"
 	"strconv"
 	"time"
 
@@ -871,5 +872,56 @@ var _ = Describe("onload controller", func() {
 				"-libMountPath=qux",
 			),
 		)
+
+		DescribeTable("Testing Onload cplane parameters",
+			func(cplane *onloadv1alpha1.ControlPlaneSpec, expectedParams string) {
+				devicePlugin := appsv1.DaemonSet{}
+				devicePluginName := types.NamespacedName{
+					Name:      onload.Name + "-onload-device-plugin-ds",
+					Namespace: onload.Namespace,
+				}
+
+				if cplane != nil {
+					onload.Spec.Onload.ControlPlane = cplane
+				}
+
+				Expect(k8sClient.Create(ctx, onload)).To(BeNil())
+
+				Eventually(func() bool {
+					err := k8sClient.Get(ctx, devicePluginName, &devicePlugin)
+					return err == nil
+				}, timeout, pollingInterval).Should(BeTrue())
+
+				// Find the worker container.
+				workerIdx := slices.IndexFunc(devicePlugin.Spec.Template.Spec.Containers,
+					func(c corev1.Container) bool { return c.Name == "onload-worker" })
+
+				Expect(workerIdx).NotTo(Equal(-1))
+				workerContainer := devicePlugin.Spec.Template.Spec.Containers[workerIdx]
+
+				// Find the ONLOAD_CP_SERVER_PARAMS env.
+				envIdx := slices.IndexFunc(workerContainer.Env,
+					func(e corev1.EnvVar) bool { return e.Name == "ONLOAD_CP_SERVER_PARAMS" })
+				Expect(envIdx).NotTo(Equal(-1))
+				envValue := workerContainer.Env[envIdx].Value
+
+				// Compare actual vs. expected.
+				Expect(envValue).To(Equal(expectedParams))
+
+			},
+			Entry( /*It*/ "should use the default parameters", nil, "-K"),
+			Entry( /*It*/ "should pass an empty list of parameters",
+				&onloadv1alpha1.ControlPlaneSpec{Parameters: []string{}}, "",
+			),
+			Entry( /*It*/ "should pass a custom list of parameters",
+				&onloadv1alpha1.ControlPlaneSpec{
+					Parameters: []string{
+						"-K",
+						"--llap-max=100",
+					},
+				}, "-K --llap-max=100",
+			),
+		)
+
 	})
 })

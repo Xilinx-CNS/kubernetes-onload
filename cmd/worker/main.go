@@ -30,6 +30,9 @@ func main() {
 	// A mount point with the Onload control plane server.
 	onloadCPServerPath := os.Getenv("ONLOAD_CP_SERVER_PATH")
 
+	// Params the Onload kmod should pass to the Onload control plane server.
+	onloadCPServerParams := os.Getenv("ONLOAD_CP_SERVER_PARAMS")
+
 	// There is a race condition when the container is starting, and the
 	// Onload kernel module is loading at the same time, resulting in not
 	// all files being available in the container.
@@ -59,8 +62,8 @@ func main() {
 
 	// Configure Onload kernel module to launch
 	// Onload control plane within a container.
-	err = control_plane.Configure(onloadCPServerPath, containerID,
-		control_plane.NewKernelParametersWriter())
+	err = control_plane.Configure(onloadCPServerPath, onloadCPServerParams,
+		containerID, control_plane.NewKernelParametersWriter())
 	if err != nil {
 		glog.Fatal("Failed to configure Onload control plane: ", err)
 	}

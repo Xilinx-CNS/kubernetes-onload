@@ -80,6 +80,15 @@ spec:
     # ImagePullPolicy is the policy used when pulling images. Optional.
     imagePullPolicy: Always
 
+    # ControlPlane allows fine-tuning of the Onload control plane server.
+    # Optional.
+    #controlPlane:
+
+      # Parameters is an optional list of parameters passed to the Onload
+      # control plane server when launched by the Onload kernel module.
+      #parameters:
+      #- -K
+
   # DevicePlugin is further specification for the Onload Device Plugin which
   # uses the device plugin framework to provide an `amd.com/onload` resource.
   # Image location is not configured here; see Onload Operator deployment.
