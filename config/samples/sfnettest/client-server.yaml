@@ -20,7 +20,6 @@ spec:
   - name: onload-sfnettest-server
     # The image's default entrypoint is a sfnt-pingpong server
     image: docker.io/onload/sfnettest:1.6.0-rc2
-    imagePullPolicy: Always
     resources:
       limits:
         amd.com/onload: 1
@@ -53,7 +52,6 @@ spec:
   containers:
   - name: onload-sfnettest-client
     image: docker.io/onload/sfnettest:1.6.0-rc2
-    imagePullPolicy: Always
     command:
     - /bin/sh
     - -c
