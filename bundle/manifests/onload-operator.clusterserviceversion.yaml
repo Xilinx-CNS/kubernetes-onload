@@ -14,10 +14,10 @@ metadata:
           },
           "spec": {
             "devicePlugin": {
-              "imagePullPolicy": "Always"
+              "imagePullPolicy": "IfNotPresent"
             },
             "onload": {
-              "imagePullPolicy": "Always",
+              "imagePullPolicy": "IfNotPresent",
               "kernelMappings": [
                 {
                   "build": {
@@ -51,7 +51,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    createdAt: "2024-01-03T12:34:25Z"
+    createdAt: "2024-01-17T09:24:35Z"
     operators.operatorframework.io/builder: operator-sdk-v1.31.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: onload-operator.v3.0.0
@@ -177,6 +177,19 @@ spec:
               labels:
                 control-plane: controller-manager
             spec:
+              affinity:
+                nodeAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: kubernetes.io/arch
+                        operator: In
+                        values:
+                        - amd64
+                      - key: kubernetes.io/os
+                        operator: In
+                        values:
+                        - linux
               containers:
               - args:
                 - --leader-elect
