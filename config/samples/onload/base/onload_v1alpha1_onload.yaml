@@ -78,7 +78,7 @@ spec:
     version: # eg. 8.0.0.0
 
     # ImagePullPolicy is the policy used when pulling images. Optional.
-    imagePullPolicy: Always
+    imagePullPolicy: IfNotPresent
 
     # ControlPlane allows fine-tuning of the Onload control plane server.
     # Optional.
@@ -96,7 +96,7 @@ spec:
   devicePlugin:
 
     # ImagePullPolicy is the policy used when pulling images. Optional.
-    imagePullPolicy: Always
+    imagePullPolicy: IfNotPresent
 
     # MaxPodsPerNode is the number of Kubernetes devices that the Onload Device
     # Plugin should register with the kubelet. Notionally this is equivalent to
