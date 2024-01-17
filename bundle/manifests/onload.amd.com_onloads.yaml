@@ -95,6 +95,20 @@ spec:
                 description: Onload is the specification of the version of Onload
                   to be used by this CR
                 properties:
+                  controlPlane:
+                    description: ControlPlane allows fine-tuning of the Onload control
+                      plane server.
+                    properties:
+                      parameters:
+                        default:
+                        - -K
+                        description: Parameters is an optional list of parameters
+                          passed to the Onload control plane server when launched
+                          by the Onload kernel module.
+                        items:
+                          type: string
+                        type: array
+                    type: object
                   imagePullPolicy:
                     description: 'ImagePullPolicy is the policy used when pulling
                       images. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images'
