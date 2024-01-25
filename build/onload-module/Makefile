@@ -32,4 +32,4 @@ onload-module-dtk: dtk_vars onload_vars
 		--build-arg DTK_AUTO=$(DTK_AUTO) \
 		--build-arg ONLOAD_SOURCE=$(ONLOAD_SOURCE) \
 		--build-arg KERNEL_FULL_VERSION=$(KERNEL_VERSION) \
-		../../config/samples/onload-module/dtk-ubi/
+		../../config/samples/onload/onload-module/dtk-ubi/
