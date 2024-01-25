@@ -26,7 +26,7 @@ gathered independently of KMM.
 The [Makefile](./Makefile) attempts to derive them for you:
 
 ```sh
-make onload-module OCP_VERSION=4.12.12 ONLOAD_SOURCE=docker.io/onload/onload-source:<onload-version>
+make onload-module-dtk OCP_VERSION=4.12.12 ONLOAD_SOURCE=docker.io/onload/onload-source:<onload-version>
 ```
 
 The above requires:
