@@ -14,7 +14,8 @@ configMapGenerator:
 
 namespace: sfptpd
 
+# See ReleaseNotes for static version tag, eg. "3.7.1.1007"
 images:
 - name: onload/sfptpd
   newName: docker.io/onload/sfptpd
-  newTag: 3.7.1.1002
+  newTag: stable
