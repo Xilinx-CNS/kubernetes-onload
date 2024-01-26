@@ -15,11 +15,11 @@ configMapGenerator:
 # Corresponds to namespace.yaml
 namespace: sfptpd
 
-# Latest stable
+# See ReleaseNotes for static version tag, eg. "3.7.1.1007"
 images:
 - name: onload/sfptpd
   newName: docker.io/onload/sfptpd
-  newTag: 3.7.1.1002
+  newTag: stable
 
 # Assign sfptpd daemon to a node with label `node-role.kubernetes.io/ptp`
 labels:
