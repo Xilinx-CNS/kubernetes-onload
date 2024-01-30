@@ -1,6 +1,6 @@
-# KubernetesOnload™
+# Onload® Operator for Kubernetes
 
-Use OpenOnload® or EnterpriseOnload® to accelerate your workloads in Kubernetes and OpenShift clusters.
+Use OpenOnload® or EnterpriseOnload® stacks to accelerate your workloads in Kubernetes® and OpenShift® clusters.
 
 ## Installation requirements
 
@@ -545,4 +545,8 @@ other users of the `onload` (or `sfc` if applicable) kernel modules when the upg
 
 ## Footnotes
 
-Copyright (c) 2023 Advanced Micro Devices, Inc.
+Trademarks are acknowledged as being the property of their respective owners.
+Kubernetes® is a trademark of The Linux Foundation. OpenShift® is a trademark
+of Red Hat, Inc..
+
+Copyright (c) 2023-2024 Advanced Micro Devices, Inc.

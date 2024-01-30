@@ -1,10 +1,13 @@
-# KubernetesOnload™ v3.0.0 Releases notes
+# Onload® Operator v3.0.1 Releases notes
 
-## Major feature release of k8sOnload™
+## Update release of the Onload Operator for Kubernetes®
 
-This software package is the v3.0.0 release of the KubernetesOnload Operator
-and Device Plugin. This is a complete rewrite of KubernetesOnload v2.0.0. The
-new version should be selected by any user running OpenOnload® on Kubernetes.
+This software package is the v3.0.1 release of the Onload Operator and
+Device Plugin, containing minor fixes to v3.0.0.
+
+Version 3.0 is a complete rewrite of v2.0 of the Onload Operator and
+the new versions should be selected by any user running OpenOnload® on
+Kubernetes.
 
 This release is supplied in the form of binary container images and scripts for
 applying to the target cluster.
@@ -16,10 +19,10 @@ latency networking and scaling cloud data center workloads.
 
 ## Operator features
 
-KubernetesOnload includes the Onload Operator to automate the deployment
-of Onload in Red Hat® OpenShift® and other Kubernetes clusters. The operator and
-associated Onload Device Plugin ease the creation of pods with interfaces
-that can run applications accelerated by Onload.
+The Onload Operator automates deployment of Onload in Red Hat® OpenShift®
+and other Kubernetes clusters. The operator and associated Onload Device Plugin
+ease the creation of pods with interfaces that can run applications accelerated
+by Onload.
 
 Application network workloads which are to be accelerated by Onload need only
 specify their need for Onload in their pod declarations. There is no need
@@ -36,7 +39,7 @@ the installed version of Onload.
         amd.com/onload: 1
 ```
 
-This version of KubernetesOnload expects AMD Solarflare adapters to be
+This version of the Onload Operator expects AMD Solarflare adapters to be
 presented to application pods as an additional IPVLAN or MACVLAN interface
 by the Multus CNI plugin.
 
@@ -61,7 +64,7 @@ of its git repository branch.
 
 ## Versions of orchestrated software
 
-The KubernetesOnload software is not tied to the versions of the software which
+The Onload Operator is not tied to the versions of the software which
 it orchestrates. Future versions of Onload and the other components can be
 used by changing the deployment configuration for the Onload Operator. This
 version of the Operator has been tested with the following versions of the
@@ -72,15 +75,14 @@ supplied with this release will pull in.
 | ---------- | --------------- |
 | OpenOnload | 8.1.2           |
 | sfnettest  | 1.6.0-rc2       |
-| sfptpd     | 3.7.1.1002      |
+| sfptpd     | 3.7.1.1007      |
 
 Upgrading to new versions of Onload, for example, can be achieved simply
 by adjusting cluster configuration files with the new desired version number.
 
 ## Kernel Module Management
 
-Management of the Onload kernel module is improved in v3.0.0
-of the Operator by the use of the
+Management of the Onload kernel module is improved in v3.0 of the Operator by the use of the
 [Kernel Module Management Operator](https://github.com/kubernetes-sigs/kernel-module-management).
 The KMM Operator ("KMM") can either build the Onload kernel module within
 the cluster automatically when a new Linux kernel is required for a node
@@ -97,9 +99,9 @@ infrastructure services such as time synchronisation with PTP are operating
 over the AMD Solarflare NIC then special provision is required to ensure
 this is done earlier in the node startup process.
 
-For the cases where it is required, KubernetesOnload includes scripts to
-arrange the installation of the `sfc` netdriver earlier in node startup.
-These take advantage of the OpenShift
+For the cases where it is required, the Onload Operator solution includes
+scripts to arrange the installation of the `sfc` netdriver earlier in node
+startup. These take advantage of the OpenShift
 [Machine Config Operator](#machine-config-operator).
 
 ## Time synchronisation options
@@ -113,7 +115,7 @@ Operator does not provide any additional capability to orchestrate sfptpd.
 
 ## Supported platforms
 
-KubernetesOnload v3.0.0 has been written as a generic solution for Kubernetes
+The Onload Operator v3.0 has been written as a generic solution for Kubernetes
 clusters and we welcome feedback from attempted use on any platform but this
 release is only qualified and officially supported on a limited range of
 platforms. Please contact your sales representative at <nic-sales@amd.com>
@@ -182,7 +184,7 @@ Onload:
 
 ## Documentation
 
-The canonical documentation for KubernetesOnload is the
+The canonical documentation for the Onload Operator solution is the
 [README](https://github.com/Xilinx-CNS/kubernetes-onload#readme) file in the
 source tree. Additional documents in the GitHub repository provide advice on
 building from source. Further documents are authoritative on the orchestrated
@@ -196,7 +198,7 @@ components, namely:
 
 ## Limitations
 
-This version of the KubernetesOnload relies on a MACVLAN or
+This version of the Onload Operator relies on a MACVLAN or
 IPVLAN of the network interface to be accelerated being presented into
 application pods as a secondary interface using the Multus CNI and does not
 accelerate traffic over the Kubernetes software defined network (SDN).
@@ -206,10 +208,10 @@ In particular, the following are not supported:
 * Calico CNI
 * MetalLB
 * pod-to-pod traffic within a node
-* upgrading from the Onload Operator v2.0.0 or earlier without
+* upgrading from the Onload Operator v2.0 or earlier without
   first removing it
 
-## Major changes since KubernetesOnload v2.0.0
+## Major changes since Onload Operator v2.0
 
 This version of the operator is a complete rewrite of the previous version of
 the operator supporting different use cases and platforms and with a simplified
@@ -223,10 +225,14 @@ Notable changes:
 * Kernel module management is automated
 * Onload node manager not required
 
+## Changes since Onload Operator v3.0.0
+
+TODO: List the minor changes
+
 ## Open source project and support status
 
-KubernetesOnload 3.0.0 has been developed as an open source project. Only
-KubernetesOnload releases and OpenOnload releases announced at
+The Onload Operator v3.0 has been developed as an open source project. Only
+Onload Operator releases and OpenOnload releases announced at
 <https://www.xilinx.com/support/download/onload> are supported by AMD
 Solarflare's Application Engineering team but we welcome engagement with any
 work in progress at <https://github.com/Xilinx-CNS/kubernetes-onload>.
@@ -242,4 +248,5 @@ SPDX-FileCopyrightText: (c) Copyright 2023 Advanced Micro Devices, Inc.
 ```
 
 All trademarks are acknowledged as being the property of their respective
-owners.
+owners. Kubernetes® is a trademark of The Linux Foundation. Red Hat® and
+OpenShift® are trademarks of Red Hat, Inc..
