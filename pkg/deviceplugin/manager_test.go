@@ -88,3 +88,59 @@ var _ = Describe("Testing command line options", func() {
 		Expect(err).ShouldNot(Succeed())
 	})
 })
+
+var _ = Describe("Testing topology information", func() {
+	var manager *NicManager
+
+	BeforeEach(func() {
+		manager = &NicManager{
+			config: NicManagerConfig{
+				MaxPodsPerNode: 1,
+			},
+		}
+	})
+
+	It("shouldn't provide numa information when none are specified", func() {
+		manager.interfaces = []nic{
+			{name: "A", numa: -1},
+			{name: "B", numa: -1},
+			{name: "C", numa: -1},
+		}
+		manager.initDevices()
+		Expect(len(manager.devices[0].Topology.GetNodes())).To(Equal(0))
+	})
+
+	It("should describe numa information when a single node is present", func() {
+		manager.interfaces = []nic{
+			{name: "A", numa: 1},
+			{name: "B", numa: -1},
+			{name: "C", numa: -1},
+		}
+		manager.initDevices()
+		Expect(len(manager.devices[0].Topology.GetNodes())).To(Equal(1))
+		Expect(manager.devices[0].Topology.GetNodes()[0].ID).To(Equal(int64(1)))
+	})
+
+	It("should describe numa information when multiple nodes are present", func() {
+		manager.interfaces = []nic{
+			{name: "A", numa: 1},
+			{name: "B", numa: 2},
+			{name: "C", numa: -1},
+		}
+		manager.initDevices()
+		Expect(len(manager.devices[0].Topology.GetNodes())).To(Equal(2))
+		Expect(manager.devices[0].Topology.GetNodes()[0].ID).To(Equal(int64(1)))
+		Expect(manager.devices[0].Topology.GetNodes()[1].ID).To(Equal(int64(2)))
+	})
+
+	It("shouldn't provide duplicate numa information", func() {
+		manager.interfaces = []nic{
+			{name: "A", numa: 1},
+			{name: "B", numa: 1},
+			{name: "C", numa: -1},
+		}
+		manager.initDevices()
+		Expect(len(manager.devices[0].Topology.GetNodes())).To(Equal(1))
+		Expect(manager.devices[0].Topology.GetNodes()[0].ID).To(Equal(int64(1)))
+	})
+})
