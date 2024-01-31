@@ -10,6 +10,7 @@ Use OpenOnload® or EnterpriseOnload® stacks to accelerate your workloads in Ku
 * [AMD Solarflare](https://www.solarflare.com) hardware (`sfc`)
 * OpenShift Container Platform (OCP) 4.10+ with
   * [Kernel Module Management (KMM) Operator](https://kmm.sigs.k8s.io/) 1.1 ([OpenShift documentation](https://docs.openshift.com/container-platform/4.14/hardware_enablement/kmm-kernel-module-management.html))
+  * [Node Feature Discovery (NFD)](docs/nfd.md) Operator (optional)
 * Both restricted network or internet-connected clusters
 
 Deployment can also be performed on Kubernetes 1.23+ but full implementation details are not currently provided.
@@ -186,6 +187,9 @@ the built-in explain command, eg. `kubectl explain onload.spec`.
 The schema for the above templates is defined by an `Onload` [Custom Resource Definition (CRD)](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/)
 in [onload_types.go](api/v1alpha1/onload_types.go) which is distributed as part of Onload Operator's
 [generated YAML bundle](config/crd/bases/onload.amd.com_onloads.yaml).
+
+The above overlay selects **all `worker` role nodes** in the cluster. To filter based on node hardware, you may wish
+to use the [recommended Node Feature Discovery configuration](docs/nfd.md).
 
 > [!IMPORTANT]
 > Due to Kubernetes limitations on label lengths, the combined length of the Name and Namespace of the Onload CR must be less than 32 characters.
