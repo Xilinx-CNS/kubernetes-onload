@@ -53,6 +53,8 @@ spec:
   # ServiceAccountName is the name of the service account that the objects
   # created by the Onload Operator will use. Required.
   serviceAccountName: onload-operator-sa
+  # imagePullSecret:
+  #   name: secret-name
 
   # Selector defines the set of nodes that this Onload CR will run on. Required.
   selector:
